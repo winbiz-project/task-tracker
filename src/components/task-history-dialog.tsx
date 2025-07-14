@@ -65,7 +65,12 @@ export function TaskHistoryDialog({
                   </div>
                   <div>
                     <p className="font-medium">{entry.changeDescription}</p>
-                    <p className="text-sm text-muted-foreground">
+                    {entry.changeDetail && (
+                      <blockquote className="mt-2 border-l-2 pl-4 italic text-muted-foreground">
+                        {entry.changeDetail}
+                      </blockquote>
+                    )}
+                    <p className="text-sm text-muted-foreground mt-1">
                       by {entry.PIC}
                     </p>
                     <p className="text-xs text-muted-foreground">

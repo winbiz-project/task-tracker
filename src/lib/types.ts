@@ -16,4 +16,5 @@ export interface TaskHistory {
   changedAt: Date;
   PIC: string;
   changeDescription: string;
+  changeDetail?: string;
 }

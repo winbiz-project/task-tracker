@@ -87,6 +87,7 @@ export default function Home() {
           changedAt: new Date(),
           PIC: updatedTask.PIC,
           changeDescription: "Progress note updated.",
+          changeDetail: updatedTask.progress,
         });
       }
 
