@@ -1,5 +1,6 @@
 "use client";
 
+import * as React from "react";
 import { formatDistanceToNow } from "date-fns";
 import type { Task } from "@/lib/types";
 import {
@@ -19,21 +20,31 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { TaskActions } from "@/components/task-actions";
-import { cn } from "@/lib/utils";
+import { Input } from "@/components/ui/input";
 
 interface TaskTableProps {
   tasks: Task[];
   onEditTask: (task: Task) => void;
   onDeleteTask: (taskId: string) => void;
   onViewHistory: (task: Task) => void;
+  onUpdateTask: (taskId: string, updatedFields: Partial<Omit<Task, 'id' | 'createdAt'>>) => void;
 }
+
+type EditingCell = {
+  taskId: string;
+  field: keyof Task;
+} | null;
 
 export function TaskTable({
   tasks,
   onEditTask,
   onDeleteTask,
   onViewHistory,
+  onUpdateTask,
 }: TaskTableProps) {
+  const [editingCell, setEditingCell] = React.useState<EditingCell>(null);
+  const [editValue, setEditValue] = React.useState("");
+
   const getStatusBadgeVariant = (status: Task["status"]) => {
     switch (status) {
       case "Done":
@@ -46,6 +57,52 @@ export function TaskTable({
         return "default";
     }
   };
+
+  const handleCellClick = (task: Task, field: keyof Task) => {
+    if (field === 'taskName' || field === 'PIC') {
+      setEditingCell({ taskId: task.id, field });
+      setEditValue(task[field] as string);
+    }
+  };
+
+  const handleSaveEdit = () => {
+    if (editingCell) {
+      onUpdateTask(editingCell.taskId, { [editingCell.field]: editValue });
+      setEditingCell(null);
+      setEditValue("");
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      handleSaveEdit();
+    } else if (e.key === 'Escape') {
+      setEditingCell(null);
+      setEditValue("");
+    }
+  };
+
+  const renderEditableCell = (task: Task, field: 'taskName' | 'PIC') => {
+    if (editingCell?.taskId === task.id && editingCell?.field === field) {
+      return (
+        <Input
+          type="text"
+          value={editValue}
+          onChange={(e) => setEditValue(e.target.value)}
+          onBlur={handleSaveEdit}
+          onKeyDown={handleKeyDown}
+          autoFocus
+          className="h-8"
+        />
+      );
+    }
+    return (
+      <div onClick={() => handleCellClick(task, field)} className="cursor-pointer min-h-[2rem] flex items-center">
+        {task[field]}
+      </div>
+    );
+  };
+
 
   if (tasks.length === 0) {
     return (
@@ -77,18 +134,18 @@ export function TaskTable({
             {tasks.map((task) => (
               <TableRow key={task.id}>
                 <TableCell className="font-medium">
-                  <button onClick={() => onViewHistory(task)} className="text-left hover:underline">
-                    {task.taskName}
-                  </button>
+                  {renderEditableCell(task, 'taskName')}
                 </TableCell>
                 <TableCell>
                   <Badge variant={getStatusBadgeVariant(task.status)}>
                     {task.status}
                   </Badge>
                 </TableCell>
-                <TableCell>{task.PIC}</TableCell>
+                <TableCell>{renderEditableCell(task, 'PIC')}</TableCell>
                 <TableCell className="max-w-xs truncate">
-                  {task.progress || "-"}
+                  <div onClick={() => onEditTask(task)} className="cursor-pointer">
+                    {task.progress || "-"}
+                  </div>
                 </TableCell>
                 <TableCell>
                   {formatDistanceToNow(task.createdAt, { addSuffix: true })}

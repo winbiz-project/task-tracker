@@ -1,14 +1,12 @@
 "use client";
 
 import * as React from "react";
-import { PlusCircle, Loader2 } from "lucide-react";
 import type { Task, TaskHistory } from "@/lib/types";
 import { tasks as initialTasks, taskHistories as initialTaskHistories } from "@/lib/mock-data";
 import { AppHeader } from "@/components/app-header";
 import { TaskTable } from "@/components/task-table";
 import { TaskFormDialog } from "@/components/task-form-dialog";
 import { TaskHistoryDialog } from "@/components/task-history-dialog";
-import { Button } from "@/components/ui/button";
 
 export default function Home() {
   const [tasks, setTasks] = React.useState<Task[]>(initialTasks);
@@ -31,6 +29,35 @@ export default function Home() {
     setTasks(tasks.filter((task) => task.id !== taskId));
     setTaskHistories(taskHistories.filter((hist) => hist.taskId !== taskId));
   };
+
+  const handleUpdateTask = (taskId: string, updatedFields: Partial<Omit<Task, "id" | "createdAt">>) => {
+    const originalTask = tasks.find(t => t.id === taskId);
+    if (!originalTask) return;
+
+    const updatedTask = { ...originalTask, ...updatedFields };
+
+    let changeDescription = '';
+    if (updatedFields.taskName && updatedFields.taskName !== originalTask.taskName) {
+        changeDescription = `Task name changed from "${originalTask.taskName}" to "${updatedTask.taskName}".`;
+    } else if (updatedFields.PIC && updatedFields.PIC !== originalTask.PIC) {
+        changeDescription = `PIC changed from "${originalTask.PIC}" to "${updatedTask.PIC}".`;
+    } else {
+        // Fallback for other potential inline edits, though currently only name and PIC are supported
+        changeDescription = 'Task details updated.';
+    }
+
+    const newHistory: TaskHistory = {
+        id: `hist-${Date.now()}`,
+        taskId: taskId,
+        changedAt: new Date(),
+        PIC: updatedTask.PIC, 
+        changeDescription,
+    };
+    
+    setTasks(tasks.map((t) => (t.id === taskId ? updatedTask : t)));
+    setTaskHistories([...taskHistories, newHistory]);
+};
+
 
   const handleSaveTask = (taskData: Omit<Task, "id" | "createdAt">, taskId?: string) => {
     if (taskId) {
@@ -102,6 +129,7 @@ export default function Home() {
             onEditTask={handleOpenForm}
             onDeleteTask={handleDeleteTask}
             onViewHistory={handleOpenHistory}
+            onUpdateTask={handleUpdateTask}
           />
         </div>
       </main>
