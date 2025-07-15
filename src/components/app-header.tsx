@@ -15,7 +15,7 @@ export function AppHeader({ onNewTaskClick }: AppHeaderProps) {
         <div className="flex items-center gap-2">
           <Icons.logo className="h-8 w-8 text-primary" />
           <h1 className="font-headline text-2xl font-semibold tracking-tight text-foreground">
-            TaskTrack Lite
+            DW TaskTrack
           </h1>
         </div>
         <Button onClick={onNewTaskClick}>

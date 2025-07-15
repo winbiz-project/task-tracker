@@ -1,4 +1,4 @@
-# TaskTrack Lite
+# DW TaskTrack
 
 ![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
 ![Framework: Next.js](https://img.shields.io/badge/Framework-Next.js-blue.svg)
@@ -35,8 +35,8 @@ You must have a [Firebase project](https://firebase.google.com/docs/web/setup) s
 
 1.  Clone the repository:
     ```bash
-    git clone https://github.com/winbiz-project/tasktrack-lite.git
-    cd tasktrack-lite
+    git clone https://github.com/winbiz-project/dw-tasktrack.git
+    cd dw-tasktrack
     ```
 2.  Install the dependencies:
     ```bash
