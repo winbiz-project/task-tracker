@@ -30,9 +30,11 @@ interface TaskTableProps {
   onUpdateTask: (taskId: string, updatedFields: Partial<Omit<Task, 'id' | 'createdAt'>>) => void;
 }
 
+type EditableField = 'taskName' | 'PIC' | 'progress';
+
 type EditingCell = {
   taskId: string;
-  field: keyof Task;
+  field: EditableField;
 } | null;
 
 export function TaskTable({
@@ -44,6 +46,13 @@ export function TaskTable({
 }: TaskTableProps) {
   const [editingCell, setEditingCell] = React.useState<EditingCell>(null);
   const [editValue, setEditValue] = React.useState("");
+  const inputRef = React.useRef<HTMLInputElement>(null);
+
+  React.useEffect(() => {
+    if (editingCell && inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, [editingCell]);
 
   const getStatusBadgeVariant = (status: Task["status"]) => {
     switch (status) {
@@ -58,11 +67,9 @@ export function TaskTable({
     }
   };
 
-  const handleCellClick = (task: Task, field: keyof Task) => {
-    if (field === 'taskName' || field === 'PIC') {
-      setEditingCell({ taskId: task.id, field });
-      setEditValue(task[field] as string);
-    }
+  const handleCellClick = (task: Task, field: EditableField) => {
+    setEditingCell({ taskId: task.id, field });
+    setEditValue(task[field] as string || "");
   };
 
   const handleSaveEdit = () => {
@@ -82,23 +89,23 @@ export function TaskTable({
     }
   };
 
-  const renderEditableCell = (task: Task, field: 'taskName' | 'PIC') => {
+  const renderEditableCell = (task: Task, field: EditableField) => {
     if (editingCell?.taskId === task.id && editingCell?.field === field) {
       return (
         <Input
+          ref={inputRef}
           type="text"
           value={editValue}
           onChange={(e) => setEditValue(e.target.value)}
           onBlur={handleSaveEdit}
           onKeyDown={handleKeyDown}
-          autoFocus
           className="h-8"
         />
       );
     }
     return (
-      <div onClick={() => handleCellClick(task, field)} className="cursor-pointer min-h-[2rem] flex items-center">
-        {task[field]}
+      <div onClick={() => handleCellClick(task, field)} className="cursor-pointer min-h-[2rem] flex items-center max-w-xs truncate">
+        {task[field] || "-"}
       </div>
     );
   };
@@ -142,10 +149,8 @@ export function TaskTable({
                   </Badge>
                 </TableCell>
                 <TableCell>{renderEditableCell(task, 'PIC')}</TableCell>
-                <TableCell className="max-w-xs truncate">
-                  <div onClick={() => onEditTask(task)} className="cursor-pointer">
-                    {task.progress || "-"}
-                  </div>
+                <TableCell>
+                  {renderEditableCell(task, 'progress')}
                 </TableCell>
                 <TableCell>
                   {formatDistanceToNow(task.createdAt, { addSuffix: true })}

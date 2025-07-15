@@ -37,12 +37,17 @@ export default function Home() {
     const updatedTask = { ...originalTask, ...updatedFields };
 
     let changeDescription = '';
+    let changeDetail: string | undefined = undefined;
+
     if (updatedFields.taskName && updatedFields.taskName !== originalTask.taskName) {
         changeDescription = `Task name changed from "${originalTask.taskName}" to "${updatedTask.taskName}".`;
     } else if (updatedFields.PIC && updatedFields.PIC !== originalTask.PIC) {
         changeDescription = `PIC changed from "${originalTask.PIC}" to "${updatedTask.PIC}".`;
+    } else if (updatedFields.progress && updatedFields.progress !== originalTask.progress) {
+        changeDescription = 'Progress note updated.';
+        changeDetail = updatedTask.progress;
     } else {
-        // Fallback for other potential inline edits, though currently only name and PIC are supported
+        // Fallback for other potential inline edits
         changeDescription = 'Task details updated.';
     }
 
@@ -52,6 +57,7 @@ export default function Home() {
         changedAt: new Date(),
         PIC: updatedTask.PIC, 
         changeDescription,
+        changeDetail,
     };
     
     setTasks(tasks.map((t) => (t.id === taskId ? updatedTask : t)));
@@ -80,7 +86,9 @@ export default function Home() {
           changeDescription: `Status changed from "${originalTask.status}" to "${updatedTask.status}".`,
         });
       }
-      if (originalTask.progress !== updatedTask.progress) {
+      // Note: Progress updates from the form are now handled by onUpdateTask, 
+      // but we keep this for when the form saves other fields and progress might have been edited.
+      if (taskData.progress && originalTask.progress !== updatedTask.progress) {
         newHistory.push({
           id: `hist-${Date.now()}-2`,
           taskId,
