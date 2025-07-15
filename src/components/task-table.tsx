@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { formatDistanceToNow } from "date-fns";
-import type { Task } from "@/lib/types";
+import type { Task, TaskStatus } from "@/lib/types";
 import {
   Table,
   TableBody,
@@ -18,6 +18,12 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
 import { TaskActions } from "@/components/task-actions";
 import { Input } from "@/components/ui/input";
@@ -36,6 +42,8 @@ type EditingCell = {
   taskId: string;
   field: EditableField;
 } | null;
+
+const statusOptions: TaskStatus[] = ["On-going", "Hold", "Done"];
 
 export function TaskTable({
   tasks,
@@ -144,9 +152,24 @@ export function TaskTable({
                   {renderEditableCell(task, 'taskName')}
                 </TableCell>
                 <TableCell>
-                  <Badge variant={getStatusBadgeVariant(task.status)}>
-                    {task.status}
-                  </Badge>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                       <Badge variant={getStatusBadgeVariant(task.status)} className="cursor-pointer">
+                         {task.status}
+                       </Badge>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent>
+                      {statusOptions.map(status => (
+                        <DropdownMenuItem 
+                          key={status}
+                          onClick={() => onUpdateTask(task.id, { status: status })}
+                          disabled={task.status === status}
+                        >
+                          {status}
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </TableCell>
                 <TableCell>{renderEditableCell(task, 'PIC')}</TableCell>
                 <TableCell>

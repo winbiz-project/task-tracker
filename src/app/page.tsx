@@ -46,6 +46,8 @@ export default function Home() {
     } else if (updatedFields.progress && updatedFields.progress !== originalTask.progress) {
         changeDescription = 'Progress note updated.';
         changeDetail = updatedTask.progress;
+    } else if (updatedFields.status && updatedFields.status !== originalTask.status) {
+        changeDescription = `Status changed from "${originalTask.status}" to "${updatedTask.status}".`;
     } else {
         // Fallback for other potential inline edits
         changeDescription = 'Task details updated.';
@@ -86,8 +88,7 @@ export default function Home() {
           changeDescription: `Status changed from "${originalTask.status}" to "${updatedTask.status}".`,
         });
       }
-      // Note: Progress updates from the form are now handled by onUpdateTask, 
-      // but we keep this for when the form saves other fields and progress might have been edited.
+      
       if (taskData.progress && originalTask.progress !== updatedTask.progress) {
         newHistory.push({
           id: `hist-${Date.now()}-2`,
