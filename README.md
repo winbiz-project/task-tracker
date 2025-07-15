@@ -4,11 +4,13 @@
 ![Framework: Next.js](https://img.shields.io/badge/Framework-Next.js-blue.svg)
 ![Styling: Tailwind CSS](https://img.shields.io/badge/Styling-Tailwind_CSS-38B2AC?logo=tailwind-css&logoColor=white)
 ![AI: Genkit](https://img.shields.io/badge/AI-Genkit-orange.svg)
+![Database: Firestore](https://img.shields.io/badge/Database-Firestore-FFCA28?logo=firebase&logoColor=white)
 
 A simple and powerful to-do list tracker built with Next.js and Firebase. It allows users to manage tasks through an intuitive interface with features like inline editing, real-time updates, and AI-powered assistance for a streamlined workflow.
 
 ## Key Features
 
+- **Real-Time Database**: Uses Firebase Firestore for live data synchronization across all clients.
 - **Task CRUD**: Create, read, update, and delete tasks with real-time UI feedback.
 - **Interactive Table**: A sortable, filterable, and paginated table for tasks with inline editing for task name, PIC, progress, and status.
 - **Activity Logger**: Track all changes to a task, including who made the change and when, with a detailed history modal.
@@ -19,10 +21,15 @@ A simple and powerful to-do list tracker built with Next.js and Firebase. It all
 - **Framework**: [Next.js](https://nextjs.org/) (with App Router)
 - **Language**: [TypeScript](https://www.typescriptlang.org/)
 - **Styling**: [Tailwind CSS](https://tailwindcss.com/) with [ShadCN UI](https://ui.shadcn.com/)
+- **Database**: [Firebase Firestore](https://firebase.google.com/docs/firestore)
 - **AI Integration**: [Genkit](https://firebase.google.com/docs/genkit)
 - **UI**: [React](https://reactjs.org/)
 
 ## Getting Started
+
+### Prerequisites
+
+You must have a [Firebase project](https://firebase.google.com/docs/web/setup) set up.
 
 ### Installation
 
@@ -38,9 +45,10 @@ A simple and powerful to-do list tracker built with Next.js and Firebase. It all
 
 ### Environment Variables
 
-To run this project, you will need to add the following environment variables to your `.env` file. This is required for the AI features to work.
+To run this project, you will need to add the following environment variables to your `.env` file.
 
-`GOOGLE_API_KEY` - Your API key for Google AI services.
+- **`GOOGLE_API_KEY`**: Your API key for Google AI services. Required for AI features.
+- **`NEXT_PUBLIC_FIREBASE_*`**: Your Firebase project's web app configuration keys. You can find these in your Firebase project settings under **Project settings > General > Your apps > SDK setup and configuration > Config**.
 
 ### How to Run
 
@@ -64,7 +72,7 @@ The application requires two separate development servers to be running concurre
 
 ## License
 
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License. See the `LICENSE` file for details.
 
 ## Contact
 

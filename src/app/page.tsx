@@ -2,18 +2,80 @@
 
 import * as React from "react";
 import type { Task, TaskHistory } from "@/lib/types";
-import { tasks as initialTasks, taskHistories as initialTaskHistories } from "@/lib/mock-data";
 import { AppHeader } from "@/components/app-header";
 import { TaskTable } from "@/components/task-table";
 import { TaskFormDialog } from "@/components/task-form-dialog";
 import { TaskHistoryDialog } from "@/components/task-history-dialog";
+import { db } from "@/lib/firebase";
+import {
+  collection,
+  addDoc,
+  updateDoc,
+  deleteDoc,
+  doc,
+  query,
+  orderBy,
+  onSnapshot,
+  serverTimestamp,
+  Timestamp,
+  where,
+} from "firebase/firestore";
 
 export default function Home() {
-  const [tasks, setTasks] = React.useState<Task[]>(initialTasks);
-  const [taskHistories, setTaskHistories] = React.useState<TaskHistory[]>(initialTaskHistories);
+  const [tasks, setTasks] = React.useState<Task[]>([]);
+  const [taskHistories, setTaskHistories] = React.useState<TaskHistory[]>([]);
   const [selectedTask, setSelectedTask] = React.useState<Task | null>(null);
   const [isFormOpen, setIsFormOpen] = React.useState(false);
   const [isHistoryOpen, setIsHistoryOpen] = React.useState(false);
+
+  // Fetch tasks in real-time
+  React.useEffect(() => {
+    const q = query(collection(db, "tasks"), orderBy("createdAt", "desc"));
+    const unsubscribe = onSnapshot(q, (querySnapshot) => {
+      const tasksData: Task[] = [];
+      querySnapshot.forEach((doc) => {
+        const data = doc.data();
+        tasksData.push({
+          id: doc.id,
+          ...data,
+          createdAt: (data.createdAt as Timestamp)?.toDate() || new Date(),
+        } as Task);
+      });
+      setTasks(tasksData);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  // Fetch history for selected task in real-time
+   React.useEffect(() => {
+    if (!selectedTask?.id) {
+        setTaskHistories([]);
+        return;
+    }
+
+    const q = query(
+        collection(db, "taskHistories"),
+        where("taskId", "==", selectedTask.id),
+        orderBy("changedAt", "desc")
+    );
+
+    const unsubscribe = onSnapshot(q, (querySnapshot) => {
+        const historiesData: TaskHistory[] = [];
+        querySnapshot.forEach((doc) => {
+            const data = doc.data();
+            historiesData.push({
+                id: doc.id,
+                ...data,
+                changedAt: (data.changedAt as Timestamp)?.toDate() || new Date(),
+            } as TaskHistory);
+        });
+        setTaskHistories(historiesData);
+    });
+
+    return () => unsubscribe();
+
+}, [selectedTask]);
+
 
   const handleOpenForm = (task?: Task) => {
     setSelectedTask(task || null);
@@ -25,109 +87,108 @@ export default function Home() {
     setIsHistoryOpen(true);
   };
 
-  const handleDeleteTask = (taskId: string) => {
-    setTasks(tasks.filter((task) => task.id !== taskId));
-    setTaskHistories(taskHistories.filter((hist) => hist.taskId !== taskId));
+  const handleDeleteTask = async (taskId: string) => {
+    try {
+        // Note: This doesn't delete sub-collections (task history) in one go.
+        // For production, a Cloud Function would be needed to clean up history.
+        await deleteDoc(doc(db, "tasks", taskId));
+    } catch (error) {
+        console.error("Error deleting task: ", error);
+    }
   };
 
-  const handleUpdateTask = (taskId: string, updatedFields: Partial<Omit<Task, "id" | "createdAt">>) => {
+  const handleUpdateTask = async (taskId: string, updatedFields: Partial<Omit<Task, "id" | "createdAt">>) => {
     const originalTask = tasks.find(t => t.id === taskId);
     if (!originalTask) return;
 
+    const taskRef = doc(db, "tasks", taskId);
+    await updateDoc(taskRef, updatedFields);
+    
+    // Create history entry
     const updatedTask = { ...originalTask, ...updatedFields };
 
     let changeDescription = '';
     let changeDetail: string | undefined = undefined;
 
-    if (updatedFields.taskName && updatedFields.taskName !== originalTask.taskName) {
-        changeDescription = `Task name changed from "${originalTask.taskName}" to "${updatedTask.taskName}".`;
-    } else if (updatedFields.PIC && updatedFields.PIC !== originalTask.PIC) {
-        changeDescription = `PIC changed from "${originalTask.PIC}" to "${updatedTask.PIC}".`;
-    } else if (updatedFields.progress && updatedFields.progress !== originalTask.progress) {
-        changeDescription = 'Progress note updated.';
-        changeDetail = updatedTask.progress;
-    } else if (updatedFields.status && updatedFields.status !== originalTask.status) {
-        changeDescription = `Status changed from "${originalTask.status}" to "${updatedTask.status}".`;
+    const fieldMapping: Record<string, string> = {
+        taskName: "Task name",
+        PIC: "PIC",
+        status: "Status",
+        progress: "Progress note"
+    };
+
+    const changedField = Object.keys(updatedFields)[0] as keyof typeof updatedFields;
+    const oldValue = originalTask[changedField];
+    const newValue = updatedFields[changedField];
+
+    if (oldValue !== newValue) {
+        if (changedField === 'progress') {
+            changeDescription = 'Progress note updated.';
+            changeDetail = newValue as string;
+        } else {
+             changeDescription = `${fieldMapping[changedField]} changed from "${oldValue}" to "${newValue}".`;
+        }
     } else {
-        // Fallback for other potential inline edits
-        changeDescription = 'Task details updated.';
+        return; // No actual change
     }
 
-    const newHistory: TaskHistory = {
-        id: `hist-${Date.now()}`,
+    await addDoc(collection(db, "taskHistories"), {
         taskId: taskId,
-        changedAt: new Date(),
+        changedAt: serverTimestamp(),
         PIC: updatedTask.PIC, 
         changeDescription,
         changeDetail,
-    };
-    
-    setTasks(tasks.map((t) => (t.id === taskId ? updatedTask : t)));
-    setTaskHistories([...taskHistories, newHistory]);
+    });
 };
 
 
-  const handleSaveTask = (taskData: Omit<Task, "id" | "createdAt">, taskId?: string) => {
+  const handleSaveTask = async (taskData: Omit<Task, "id" | "createdAt">, taskId?: string) => {
     if (taskId) {
       // Update existing task
       const originalTask = tasks.find(t => t.id === taskId);
       if (!originalTask) return;
 
-      const newHistory: TaskHistory[] = [];
-      const updatedTask = {
-        ...originalTask,
-        ...taskData,
-      };
+      const taskRef = doc(db, "tasks", taskId);
+      await updateDoc(taskRef, taskData);
+
+      const updatedTask = { ...originalTask, ...taskData };
 
       if (originalTask.status !== updatedTask.status) {
-        newHistory.push({
-          id: `hist-${Date.now()}-1`,
-          taskId,
-          changedAt: new Date(),
-          PIC: updatedTask.PIC,
-          changeDescription: `Status changed from "${originalTask.status}" to "${updatedTask.status}".`,
+        await addDoc(collection(db, "taskHistories"), {
+            taskId,
+            changedAt: serverTimestamp(),
+            PIC: updatedTask.PIC,
+            changeDescription: `Status changed from "${originalTask.status}" to "${updatedTask.status}".`,
         });
       }
       
       if (taskData.progress && originalTask.progress !== updatedTask.progress) {
-        newHistory.push({
-          id: `hist-${Date.now()}-2`,
-          taskId,
-          changedAt: new Date(),
-          PIC: updatedTask.PIC,
-          changeDescription: "Progress note updated.",
-          changeDetail: updatedTask.progress,
+         await addDoc(collection(db, "taskHistories"), {
+            taskId,
+            changedAt: serverTimestamp(),
+            PIC: updatedTask.PIC,
+            changeDescription: "Progress note updated.",
+            changeDetail: updatedTask.progress,
         });
       }
 
-      setTasks(tasks.map((t) => (t.id === taskId ? updatedTask : t)));
-      if (newHistory.length > 0) {
-        setTaskHistories([...taskHistories, ...newHistory]);
-      }
     } else {
       // Create new task
-      const newTask: Task = {
-        id: `task-${Date.now()}`,
-        createdAt: new Date(),
+      const docRef = await addDoc(collection(db, "tasks"), {
         ...taskData,
-      };
-      const newHistory: TaskHistory = {
-        id: `hist-${Date.now()}`,
-        taskId: newTask.id,
-        changedAt: new Date(),
-        PIC: newTask.PIC,
+        createdAt: serverTimestamp(),
+      });
+      
+      await addDoc(collection(db, "taskHistories"), {
+        taskId: docRef.id,
+        changedAt: serverTimestamp(),
+        PIC: taskData.PIC,
         changeDescription: "Task created.",
-      };
-      setTasks([newTask, ...tasks]);
-      setTaskHistories([...taskHistories, newHistory]);
+      });
     }
     setIsFormOpen(false);
     setSelectedTask(null);
   };
-
-  const taskHistoryForSelectedTask = taskHistories
-    .filter((h) => h.taskId === selectedTask?.id)
-    .sort((a, b) => b.changedAt.getTime() - a.changedAt.getTime());
 
   return (
     <div className="flex h-full flex-col bg-background">
@@ -149,14 +210,14 @@ export default function Home() {
         onOpenChange={setIsFormOpen}
         onSave={handleSaveTask}
         task={selectedTask}
-        taskHistories={selectedTask ? taskHistoryForSelectedTask : []}
+        taskHistories={taskHistories}
       />
       
       <TaskHistoryDialog
         isOpen={isHistoryOpen}
         onOpenChange={setIsHistoryOpen}
         task={selectedTask}
-        history={taskHistoryForSelectedTask}
+        history={taskHistories}
       />
     </div>
   );

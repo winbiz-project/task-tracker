@@ -1,3 +1,5 @@
+import type { Timestamp } from "firebase/firestore";
+
 export type TaskStatus = "On-going" | "Hold" | "Done";
 
 export interface Task {
@@ -7,13 +9,13 @@ export interface Task {
   description?: string;
   progress?: string;
   status: TaskStatus;
-  createdAt: Date;
+  createdAt: Date | Timestamp;
 }
 
 export interface TaskHistory {
   id: string;
   taskId: string;
-  changedAt: Date;
+  changedAt: Date | Timestamp;
   PIC: string;
   changeDescription: string;
   changeDetail?: string;
