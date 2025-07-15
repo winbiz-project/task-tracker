@@ -40,12 +40,6 @@ export default function LoginPage() {
         </CardContent>
         <CardFooter className="flex flex-col gap-4">
           <Button className="w-full bg-accent text-accent-foreground hover:bg-accent/90">Sign In</Button>
-           <p className="text-center text-sm text-muted-foreground">
-              Don't have an account?{" "}
-              <Button variant="link" className="p-0 h-auto">
-                Sign up
-              </Button>
-            </p>
         </CardFooter>
       </Card>
     </div>
