@@ -1,12 +1,14 @@
 "use client";
 
 import * as React from "react";
+import { useRouter } from "next/navigation";
 import type { Task, TaskHistory } from "@/lib/types";
 import { AppHeader } from "@/components/app-header";
 import { TaskTable } from "@/components/task-table";
 import { TaskFormDialog } from "@/components/task-form-dialog";
 import { TaskHistoryDialog } from "@/components/task-history-dialog";
 import { db } from "@/lib/firebase";
+import { getAuth, onAuthStateChanged, signOut, type User } from "firebase/auth";
 import {
   collection,
   addDoc,
@@ -20,6 +22,8 @@ import {
   Timestamp,
   where,
 } from "firebase/firestore";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
 
 export default function Home() {
   const [tasks, setTasks] = React.useState<Task[]>([]);
@@ -27,9 +31,28 @@ export default function Home() {
   const [selectedTask, setSelectedTask] = React.useState<Task | null>(null);
   const [isFormOpen, setIsFormOpen] = React.useState(false);
   const [isHistoryOpen, setIsHistoryOpen] = React.useState(false);
+  const [user, setUser] = React.useState<User | null>(null);
+  const [isLoading, setIsLoading] = React.useState(true);
+  const router = useRouter();
+  const auth = getAuth();
+
+  React.useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        setUser(user);
+        setIsLoading(false);
+      } else {
+        router.push('/login');
+      }
+    });
+
+    return () => unsubscribe();
+  }, [auth, router]);
+  
 
   // Fetch tasks in real-time
   React.useEffect(() => {
+    if (!user) return;
     const q = query(collection(db, "tasks"), orderBy("createdAt", "desc"));
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
       const tasksData: Task[] = [];
@@ -44,7 +67,7 @@ export default function Home() {
       setTasks(tasksData);
     });
     return () => unsubscribe();
-  }, []);
+  }, [user]);
 
   // Fetch history for selected task in real-time
    React.useEffect(() => {
@@ -135,7 +158,7 @@ export default function Home() {
     await addDoc(collection(db, "taskHistories"), {
         taskId: taskId,
         changedAt: serverTimestamp(),
-        PIC: updatedTask.PIC, 
+        PIC: user?.email || "System", 
         changeDescription,
         changeDetail,
     });
@@ -157,7 +180,7 @@ export default function Home() {
         await addDoc(collection(db, "taskHistories"), {
             taskId,
             changedAt: serverTimestamp(),
-            PIC: updatedTask.PIC,
+            PIC: user?.email || "System",
             changeDescription: `Status changed from "${originalTask.status}" to "${updatedTask.status}".`,
         });
       }
@@ -166,7 +189,7 @@ export default function Home() {
          await addDoc(collection(db, "taskHistories"), {
             taskId,
             changedAt: serverTimestamp(),
-            PIC: updatedTask.PIC,
+            PIC: user?.email || "System",
             changeDescription: "Progress note updated.",
             changeDetail: updatedTask.progress,
         });
@@ -182,17 +205,50 @@ export default function Home() {
       await addDoc(collection(db, "taskHistories"), {
         taskId: docRef.id,
         changedAt: serverTimestamp(),
-        PIC: taskData.PIC,
+        PIC: user?.email || "System",
         changeDescription: "Task created.",
       });
     }
     setIsFormOpen(false);
     setSelectedTask(null);
   };
+  
+  const handleSignOut = async () => {
+    try {
+      await signOut(auth);
+      router.push('/login');
+    } catch (error) {
+      console.error('Sign out error', error);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex h-full w-full flex-col">
+        <header className="sticky top-0 z-10 w-full border-b bg-card shadow-sm">
+          <div className="container mx-auto flex h-16 max-w-7xl items-center justify-between px-4 md:px-8">
+            <div className="flex items-center gap-2">
+              <Skeleton className="h-8 w-8 rounded-full" />
+              <Skeleton className="h-6 w-40" />
+            </div>
+            <Skeleton className="h-10 w-32" />
+          </div>
+        </header>
+        <main className="flex-1 p-4 md:p-8">
+           <div className="mx-auto max-w-7xl space-y-4">
+              <Skeleton className="h-24 w-full" />
+              <Skeleton className="h-16 w-full" />
+              <Skeleton className="h-16 w-full" />
+              <Skeleton className="h-16 w-full" />
+           </div>
+        </main>
+      </div>
+    )
+  }
 
   return (
     <div className="flex h-full flex-col bg-background">
-      <AppHeader onNewTaskClick={() => handleOpenForm()} />
+      <AppHeader onNewTaskClick={() => handleOpenForm()} onSignOut={handleSignOut} userEmail={user?.email} />
       <main className="flex-1 overflow-y-auto p-4 md:p-8">
         <div className="mx-auto max-w-7xl">
           <TaskTable
