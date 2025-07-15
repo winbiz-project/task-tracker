@@ -6,7 +6,7 @@ import { useForm } from "react-hook-form";
 import * as z from "zod";
 import { Loader2, Sparkles } from "lucide-react";
 
-import { generateProgressNote } from "@/ai/flows/generate-progress-note";
+import { generateTaskDescription } from "@/ai/flows/generate-task-description";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -56,7 +56,7 @@ interface TaskFormDialogProps {
   taskHistories: TaskHistory[];
 }
 
-export function TaskFormDialog({ isOpen, onOpenChange, onSave, task, taskHistories }: TaskFormDialogProps) {
+export function TaskFormDialog({ isOpen, onOpenChange, onSave, task }: TaskFormDialogProps) {
   const { toast } = useToast();
   const [isGenerating, setIsGenerating] = React.useState(false);
 
@@ -85,7 +85,7 @@ export function TaskFormDialog({ isOpen, onOpenChange, onSave, task, taskHistori
     }
   }, [task, form, isOpen]);
 
-  const handleGenerateProgress = async () => {
+  const handleGenerateDescription = async () => {
     setIsGenerating(true);
     const taskName = form.getValues("taskName");
     if (!taskName) {
@@ -98,22 +98,20 @@ export function TaskFormDialog({ isOpen, onOpenChange, onSave, task, taskHistori
       return;
     }
 
-    const historyString = taskHistories.map(h => `- ${h.changeDescription} (by ${h.PIC} at ${h.changedAt.toLocaleString()})`).join('\n');
-
     try {
-      const result = await generateProgressNote({ taskName, taskHistory: historyString || "No history yet." });
-      if (result.progress) {
-        form.setValue("progress", result.progress, { shouldValidate: true });
+      const result = await generateTaskDescription({ taskName });
+      if (result.description) {
+        form.setValue("description", result.description, { shouldValidate: true });
         toast({
-            title: "Progress note generated!",
-            description: "The AI has suggested a progress note for you."
+            title: "Description generated!",
+            description: "The AI has suggested a description for you."
         });
       }
     } catch (error) {
-      console.error("Failed to generate progress note:", error);
+      console.error("Failed to generate description:", error);
       toast({
         title: "Generation Failed",
-        description: "Could not generate a progress note. Please try again.",
+        description: "Could not generate a description. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -191,7 +189,23 @@ export function TaskFormDialog({ isOpen, onOpenChange, onSave, task, taskHistori
               name="description"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Description</FormLabel>
+                   <div className="flex items-center justify-between">
+                        <FormLabel>Description</FormLabel>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={handleGenerateDescription}
+                            disabled={isGenerating}
+                        >
+                            {isGenerating ? (
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            ) : (
+                                <Sparkles className="mr-2 h-4 w-4 text-yellow-400" />
+                            )}
+                            Generate Description
+                        </Button>
+                    </div>
                   <FormControl>
                     <Textarea placeholder="Add a detailed description for the task..." {...field} />
                   </FormControl>
@@ -204,23 +218,7 @@ export function TaskFormDialog({ isOpen, onOpenChange, onSave, task, taskHistori
               name="progress"
               render={({ field }) => (
                 <FormItem>
-                    <div className="flex items-center justify-between">
-                        <FormLabel>Progress Note</FormLabel>
-                        <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={handleGenerateProgress}
-                            disabled={isGenerating}
-                        >
-                            {isGenerating ? (
-                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            ) : (
-                                <Sparkles className="mr-2 h-4 w-4 text-yellow-400" />
-                            )}
-                            Generate Note
-                        </Button>
-                    </div>
+                  <FormLabel>Progress Note</FormLabel>
                   <FormControl>
                     <Textarea placeholder="Add a short progress note..." {...field} />
                   </FormControl>
