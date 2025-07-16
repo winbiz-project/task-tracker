@@ -21,6 +21,8 @@ import {
   serverTimestamp,
   Timestamp,
   where,
+  getDocs,
+  writeBatch,
 } from "firebase/firestore";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
@@ -112,11 +114,21 @@ export default function Home() {
 
   const handleDeleteTask = async (taskId: string) => {
     try {
-        // Note: This doesn't delete sub-collections (task history) in one go.
-        // For production, a Cloud Function would be needed to clean up history.
-        await deleteDoc(doc(db, "tasks", taskId));
+      // Find and delete all related history documents
+      const historyQuery = query(collection(db, "taskHistories"), where("taskId", "==", taskId));
+      const historySnapshot = await getDocs(historyQuery);
+      
+      const batch = writeBatch(db);
+      historySnapshot.forEach((doc) => {
+        batch.delete(doc.ref);
+      });
+      await batch.commit();
+
+      // Delete the main task document
+      await deleteDoc(doc(db, "tasks", taskId));
+
     } catch (error) {
-        console.error("Error deleting task: ", error);
+        console.error("Error deleting task and its history: ", error);
     }
   };
 
