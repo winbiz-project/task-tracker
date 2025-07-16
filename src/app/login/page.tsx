@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { getAuth, signInWithEmailAndPassword } from "firebase/auth";
+import { getAuth, signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from "firebase/auth";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -44,6 +44,26 @@ export default function LoginPage() {
     }
   };
 
+  const handleGoogleSignIn = async () => {
+    setIsLoading(true);
+    const auth = getAuth();
+    const provider = new GoogleAuthProvider();
+    try {
+      await signInWithPopup(auth, provider);
+      router.push("/");
+    } catch (error: any) {
+      console.error("Google Authentication error:", error);
+      toast({
+        title: "Sign In Failed",
+        description: error.message || "Could not sign in with Google. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+
   return (
     <div className="flex h-screen w-full items-center justify-center bg-background px-4">
        <Card className="w-full max-w-sm">
@@ -66,6 +86,7 @@ export default function LoginPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required 
+                  disabled={isLoading}
                 />
               </div>
               <div className="flex flex-col space-y-1.5">
@@ -77,6 +98,7 @@ export default function LoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required 
+                  disabled={isLoading}
                 />
               </div>
                <Button type="submit" className="w-full bg-accent text-accent-foreground hover:bg-accent/90" disabled={isLoading}>
@@ -85,6 +107,26 @@ export default function LoginPage() {
               </Button>
             </div>
           </form>
+           <div className="relative my-4">
+            <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-background px-2 text-muted-foreground">
+                Or continue with
+                </span>
+            </div>
+          </div>
+          <Button variant="outline" className="w-full" onClick={handleGoogleSignIn} disabled={isLoading}>
+            {isLoading ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+                <svg className="mr-2 h-4 w-4" aria-hidden="true" focusable="false" data-prefix="fab" data-icon="google" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 488 512">
+                    <path fill="currentColor" d="M488 261.8C488 403.3 381.4 512 244 512 111.3 512 0 398.5 0 256S111.3 0 244 0c69.3 0 125.3 23.4 172.4 68.6l-67.9 67.9C293.7 113.2 271.5 99.8 244 99.8c-66.8 0-121.5 54.9-121.5 122.3s54.6 122.3 121.5 122.3c71.3 0 99.4-48.4 102.8-72.2H244v-82.1h235.5c4.8 26.3 7.5 54.3 7.5 84.1z"></path>
+                </svg>
+            )}
+            Google
+          </Button>
         </CardContent>
         <CardFooter className="flex flex-col gap-4">
         </CardFooter>
