@@ -2,7 +2,8 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { getAuth, signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from "firebase/auth";
+import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from "firebase/auth";
+import { auth } from "@/lib/firebase"; // Import initialized auth
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -28,7 +29,6 @@ export default function LoginPage() {
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    const auth = getAuth();
     try {
       await signInWithEmailAndPassword(auth, email, password);
       router.push("/");
@@ -46,12 +46,11 @@ export default function LoginPage() {
 
   const handleGoogleSignIn = async () => {
     setIsLoading(true);
-    const auth = getAuth();
     const provider = new GoogleAuthProvider();
     try {
       await signInWithPopup(auth, provider);
       router.push("/");
-    } catch (error: any) {
+    } catch (error: any)
       console.error("Google Authentication error:", error);
       toast({
         title: "Sign In Failed",
