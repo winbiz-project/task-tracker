@@ -139,18 +139,19 @@ export default function Home() {
         // Reference to the main task document
         const taskRef = doc(db, "tasks", taskId);
 
-        // Find and delete all related history documents
+        // Find all related history documents
         const historyQuery = query(collection(db, "taskHistories"), where("taskId", "==", taskId));
         const historySnapshot = await getDocs(historyQuery);
         
+        // Add delete operations for each history document to the batch
         historySnapshot.forEach((doc) => {
             batch.delete(doc.ref);
         });
         
-        // Delete the main task document
+        // Add delete operation for the main task document to the batch
         batch.delete(taskRef);
 
-        // Commit the batch
+        // Commit the batch to execute all delete operations atomically
         await batch.commit();
 
     } catch (error) {
