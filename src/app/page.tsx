@@ -207,53 +207,54 @@ export default function Home() {
     if (!user) return; // Should not happen if page is protected
 
     try {
-      if (taskId) {
-        // Update existing task
-        const originalTask = tasks.find(t => t.id === taskId);
-        if (!originalTask) return;
+        if (taskId) {
+            // Update existing task
+            const originalTask = tasks.find(t => t.id === taskId);
+            if (!originalTask) return;
 
-        const taskRef = doc(db, "tasks", taskId);
-        await updateDoc(taskRef, taskData);
+            const batch = writeBatch(db);
+            const taskRef = doc(db, "tasks", taskId);
+            batch.update(taskRef, taskData);
 
-        const updatedTask = { ...originalTask, ...taskData };
+            const updatedTask = { ...originalTask, ...taskData };
+            const changes = [];
 
-        if (originalTask.status !== updatedTask.status) {
-          await addDoc(collection(db, "taskHistories"), {
-              taskId,
-              changedAt: serverTimestamp(),
-              PIC: user?.email || "System",
-              changeDescription: `Status changed from "${originalTask.status}" to "${updatedTask.status}".`,
-          });
+            if (originalTask.taskName !== updatedTask.taskName) changes.push(`Task name changed from "${originalTask.taskName}" to "${updatedTask.taskName}".`);
+            if (originalTask.PIC !== updatedTask.PIC) changes.push(`PIC changed from "${originalTask.PIC}" to "${updatedTask.PIC}".`);
+            if (originalTask.description !== updatedTask.description) changes.push(`Description updated.`);
+            if (originalTask.status !== updatedTask.status) changes.push(`Status changed from "${originalTask.status}" to "${updatedTask.status}".`);
+            if (originalTask.progress !== updatedTask.progress) changes.push(`Progress note updated.`);
+
+            if (changes.length > 0) {
+                const historyRef = doc(collection(db, "taskHistories"));
+                batch.set(historyRef, {
+                    taskId,
+                    changedAt: serverTimestamp(),
+                    PIC: user?.email || "System",
+                    changeDescription: "Task details updated.",
+                    changeDetail: changes.join('\n'),
+                });
+            }
+            await batch.commit();
+
+        } else {
+            // Create new task
+            const docRef = await addDoc(collection(db, "tasks"), {
+                ...taskData,
+                userId: user.uid,
+                createdAt: serverTimestamp(),
+            });
+
+            await addDoc(collection(db, "taskHistories"), {
+                taskId: docRef.id,
+                changedAt: serverTimestamp(),
+                PIC: user?.email || "System",
+                changeDescription: "Task created.",
+            });
         }
-        
-        if (taskData.progress && originalTask.progress !== updatedTask.progress) {
-          await addDoc(collection(db, "taskHistories"), {
-              taskId,
-              changedAt: serverTimestamp(),
-              PIC: user?.email || "System",
-              changeDescription: "Progress note updated.",
-              changeDetail: updatedTask.progress,
-          });
-        }
-
-      } else {
-        // Create new task
-        const docRef = await addDoc(collection(db, "tasks"), {
-          ...taskData,
-          userId: user.uid,
-          createdAt: serverTimestamp(),
-        });
-        
-        await addDoc(collection(db, "taskHistories"), {
-          taskId: docRef.id,
-          changedAt: serverTimestamp(),
-          PIC: user?.email || "System",
-          changeDescription: "Task created.",
-        });
-      }
-      setIsFormOpen(false);
-      setSelectedTask(null);
-    } catch(error) {
+        setIsFormOpen(false);
+        setSelectedTask(null);
+    } catch (error) {
         console.error("Error saving task: ", error);
     }
   };
