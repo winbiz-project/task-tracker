@@ -28,7 +28,6 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { AuthDialog } from "@/components/auth-dialog";
-import { Icons } from "@/components/icons";
 
 export default function Home() {
   const [tasks, setTasks] = React.useState<Task[]>([]);
@@ -128,21 +127,16 @@ export default function Home() {
     if (!user) return;
     try {
       const batch = writeBatch(db);
-      
-      // Query for all history documents for the task
       const historyQuery = query(collection(db, "taskHistories"), where("taskId", "==", taskId));
       const historySnapshot = await getDocs(historyQuery);
       
-      // Add each history document to the batch for deletion
       historySnapshot.forEach((doc) => {
         batch.delete(doc.ref);
       });
       
-      // Add the task document to the batch for deletion
       const taskRef = doc(db, "tasks", taskId);
       batch.delete(taskRef);
       
-      // Commit the batch
       await batch.commit();
     } catch (error) {
       console.error("Error deleting task and its history: ", error);
@@ -152,20 +146,24 @@ export default function Home() {
   const handleUpdateTask = async (taskId: string, updatedFields: Partial<Omit<Task, "id" | "createdAt" | "userId">>) => {
     const originalTask = tasks.find(t => t.id === taskId);
     if (!originalTask || !user) return;
+    
     const taskRef = doc(db, "tasks", taskId);
     await updateDoc(taskRef, updatedFields);
-    const updatedTask = { ...originalTask, ...updatedFields };
+
     let changeDescription = '';
     let changeDetail: string | undefined = undefined;
+
     const fieldMapping: Record<string, string> = {
         taskName: "Task name",
         PIC: "PIC",
         status: "Status",
         progress: "Progress note"
     };
+
     const changedField = Object.keys(updatedFields)[0] as keyof typeof updatedFields;
     const oldValue = originalTask[changedField];
     const newValue = updatedFields[changedField];
+
     if (oldValue !== newValue) {
         if (changedField === 'progress') {
             changeDescription = 'Progress note updated.';
@@ -174,15 +172,21 @@ export default function Home() {
              changeDescription = `${fieldMapping[changedField]} changed from "${oldValue}" to "${newValue}".`;
         }
     } else {
-        return;
+        return; 
     }
-    await addDoc(collection(db, "taskHistories"), {
+
+    const historyData: Omit<TaskHistory, "id" | "changedAt"> & { changedAt: any } = {
         taskId: taskId,
         changedAt: serverTimestamp(),
         PIC: user?.email || "System", 
         changeDescription,
-        changeDetail,
-    });
+    };
+
+    if (changeDetail) {
+      historyData.changeDetail = changeDetail;
+    }
+
+    await addDoc(collection(db, "taskHistories"), historyData);
   };
 
   const handleSaveTask = async (taskData: Omit<Task, "id" | "createdAt" | "userId">, taskId?: string) => {
