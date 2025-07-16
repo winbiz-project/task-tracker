@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { PlusCircle, LogOut } from "lucide-react";
+import { PlusCircle, LogOut, LogIn } from "lucide-react";
 import { Icons } from "@/components/icons";
 import {
   DropdownMenu,
@@ -14,12 +14,14 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 interface AppHeaderProps {
+  isLoggedIn: boolean;
   onNewTaskClick: () => void;
   onSignOut: () => void;
+  onLoginClick: () => void;
   userEmail?: string | null;
 }
 
-export function AppHeader({ onNewTaskClick, onSignOut, userEmail }: AppHeaderProps) {
+export function AppHeader({ isLoggedIn, onNewTaskClick, onSignOut, onLoginClick, userEmail }: AppHeaderProps) {
   
   const getInitials = (email?: string | null) => {
     return email ? email.charAt(0).toUpperCase() : '?';
@@ -35,35 +37,44 @@ export function AppHeader({ onNewTaskClick, onSignOut, userEmail }: AppHeaderPro
           </h1>
         </div>
         <div className="flex items-center gap-4">
-            <Button onClick={onNewTaskClick}>
-                <PlusCircle className="mr-2 h-4 w-4" />
-                New Task
-            </Button>
-            <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-                <Avatar className="h-8 w-8">
-                  <AvatarImage src="#" alt="User Avatar" />
-                  <AvatarFallback>{getInitials(userEmail)}</AvatarFallback>
-                </Avatar>
+          {isLoggedIn ? (
+            <>
+              <Button onClick={onNewTaskClick}>
+                  <PlusCircle className="mr-2 h-4 w-4" />
+                  New Task
               </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-56" align="end" forceMount>
-              <DropdownMenuLabel className="font-normal">
-                <div className="flex flex-col space-y-1">
-                  <p className="text-sm font-medium leading-none">Logged in as</p>
-                  <p className="text-xs leading-none text-muted-foreground">
-                    {userEmail}
-                  </p>
-                </div>
-              </DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={onSignOut}>
-                <LogOut className="mr-2 h-4 w-4" />
-                <span>Log out</span>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+              <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                  <Avatar className="h-8 w-8">
+                    <AvatarImage src="#" alt="User Avatar" />
+                    <AvatarFallback>{getInitials(userEmail)}</AvatarFallback>
+                  </Avatar>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-56" align="end" forceMount>
+                <DropdownMenuLabel className="font-normal">
+                  <div className="flex flex-col space-y-1">
+                    <p className="text-sm font-medium leading-none">Logged in as</p>
+                    <p className="text-xs leading-none text-muted-foreground">
+                      {userEmail}
+                    </p>
+                  </div>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={onSignOut}>
+                  <LogOut className="mr-2 h-4 w-4" />
+                  <span>Log out</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </>
+          ) : (
+            <Button onClick={onLoginClick}>
+              <LogIn className="mr-2 h-4 w-4" />
+              Login / Register
+            </Button>
+          )}
         </div>
       </div>
     </header>
