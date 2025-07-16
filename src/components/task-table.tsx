@@ -33,7 +33,7 @@ interface TaskTableProps {
   onEditTask: (task: Task) => void;
   onDeleteTask: (taskId: string) => void;
   onViewHistory: (task: Task) => void;
-  onUpdateTask: (taskId: string, updatedFields: Partial<Omit<Task, 'id' | 'createdAt'>>) => void;
+  onUpdateTask: (taskId: string, updatedFields: Partial<Omit<Task, 'id' | 'createdAt' | 'userId'>>) => void;
 }
 
 type EditableField = 'taskName' | 'PIC' | 'progress';

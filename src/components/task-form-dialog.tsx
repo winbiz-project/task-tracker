@@ -51,7 +51,7 @@ const statusOptions: TaskStatus[] = ["On-going", "Hold", "Done"];
 interface TaskFormDialogProps {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
-  onSave: (data: TaskFormData, taskId?: string) => void;
+  onSave: (data: Omit<Task, "id" | "createdAt" | "userId">, taskId?: string) => void;
   task: Task | null;
   taskHistories: TaskHistory[];
 }

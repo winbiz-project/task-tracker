@@ -4,6 +4,7 @@ export type TaskStatus = "On-going" | "Hold" | "Done";
 
 export interface Task {
   id: string;
+  userId: string;
   taskName: string;
   PIC: string;
   description?: string;

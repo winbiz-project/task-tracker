@@ -55,7 +55,7 @@ export default function Home() {
   // Fetch tasks in real-time
   React.useEffect(() => {
     if (!user) return;
-    const q = query(collection(db, "tasks"), orderBy("createdAt", "desc"));
+    const q = query(collection(db, "tasks"), where("userId", "==", user.uid), orderBy("createdAt", "desc"));
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
       const tasksData: Task[] = [];
       querySnapshot.forEach((doc) => {
@@ -132,9 +132,9 @@ export default function Home() {
     }
   };
 
-  const handleUpdateTask = async (taskId: string, updatedFields: Partial<Omit<Task, "id" | "createdAt">>) => {
+  const handleUpdateTask = async (taskId: string, updatedFields: Partial<Omit<Task, "id" | "createdAt" | "userId">>) => {
     const originalTask = tasks.find(t => t.id === taskId);
-    if (!originalTask) return;
+    if (!originalTask || !user) return;
 
     const taskRef = doc(db, "tasks", taskId);
     await updateDoc(taskRef, updatedFields);
@@ -177,7 +177,9 @@ export default function Home() {
 };
 
 
-  const handleSaveTask = async (taskData: Omit<Task, "id" | "createdAt">, taskId?: string) => {
+  const handleSaveTask = async (taskData: Omit<Task, "id" | "createdAt" | "userId">, taskId?: string) => {
+    if (!user) return; // Should not happen if page is protected
+
     if (taskId) {
       // Update existing task
       const originalTask = tasks.find(t => t.id === taskId);
@@ -211,6 +213,7 @@ export default function Home() {
       // Create new task
       const docRef = await addDoc(collection(db, "tasks"), {
         ...taskData,
+        userId: user.uid,
         createdAt: serverTimestamp(),
       });
       
