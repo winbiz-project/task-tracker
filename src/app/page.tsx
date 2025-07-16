@@ -67,6 +67,8 @@ export default function Home() {
         } as Task);
       });
       setTasks(tasksData);
+    }, (error) => {
+        console.error("Task listener error:", error);
     });
     return () => unsubscribe();
   }, [user]);
@@ -95,6 +97,8 @@ export default function Home() {
             } as TaskHistory);
         });
         setTaskHistories(historiesData);
+    }, (error) => {
+        console.error("History listener error:", error);
     });
 
     return () => unsubscribe();
@@ -113,19 +117,26 @@ export default function Home() {
   };
 
   const handleDeleteTask = async (taskId: string) => {
+    if (!user) return;
     try {
-      // Find and delete all related history documents
-      const historyQuery = query(collection(db, "taskHistories"), where("taskId", "==", taskId));
-      const historySnapshot = await getDocs(historyQuery);
-      
-      const batch = writeBatch(db);
-      historySnapshot.forEach((doc) => {
-        batch.delete(doc.ref);
-      });
-      await batch.commit();
+        const batch = writeBatch(db);
 
-      // Delete the main task document
-      await deleteDoc(doc(db, "tasks", taskId));
+        // Reference to the main task document
+        const taskRef = doc(db, "tasks", taskId);
+
+        // Find and delete all related history documents
+        const historyQuery = query(collection(db, "taskHistories"), where("taskId", "==", taskId));
+        const historySnapshot = await getDocs(historyQuery);
+        
+        historySnapshot.forEach((doc) => {
+            batch.delete(doc.ref);
+        });
+        
+        // Delete the main task document
+        batch.delete(taskRef);
+
+        // Commit the batch
+        await batch.commit();
 
     } catch (error) {
         console.error("Error deleting task and its history: ", error);
@@ -180,52 +191,56 @@ export default function Home() {
   const handleSaveTask = async (taskData: Omit<Task, "id" | "createdAt" | "userId">, taskId?: string) => {
     if (!user) return; // Should not happen if page is protected
 
-    if (taskId) {
-      // Update existing task
-      const originalTask = tasks.find(t => t.id === taskId);
-      if (!originalTask) return;
+    try {
+      if (taskId) {
+        // Update existing task
+        const originalTask = tasks.find(t => t.id === taskId);
+        if (!originalTask) return;
 
-      const taskRef = doc(db, "tasks", taskId);
-      await updateDoc(taskRef, taskData);
+        const taskRef = doc(db, "tasks", taskId);
+        await updateDoc(taskRef, taskData);
 
-      const updatedTask = { ...originalTask, ...taskData };
+        const updatedTask = { ...originalTask, ...taskData };
 
-      if (originalTask.status !== updatedTask.status) {
+        if (originalTask.status !== updatedTask.status) {
+          await addDoc(collection(db, "taskHistories"), {
+              taskId,
+              changedAt: serverTimestamp(),
+              PIC: user?.email || "System",
+              changeDescription: `Status changed from "${originalTask.status}" to "${updatedTask.status}".`,
+          });
+        }
+        
+        if (taskData.progress && originalTask.progress !== updatedTask.progress) {
+          await addDoc(collection(db, "taskHistories"), {
+              taskId,
+              changedAt: serverTimestamp(),
+              PIC: user?.email || "System",
+              changeDescription: "Progress note updated.",
+              changeDetail: updatedTask.progress,
+          });
+        }
+
+      } else {
+        // Create new task
+        const docRef = await addDoc(collection(db, "tasks"), {
+          ...taskData,
+          userId: user.uid,
+          createdAt: serverTimestamp(),
+        });
+        
         await addDoc(collection(db, "taskHistories"), {
-            taskId,
-            changedAt: serverTimestamp(),
-            PIC: user?.email || "System",
-            changeDescription: `Status changed from "${originalTask.status}" to "${updatedTask.status}".`,
+          taskId: docRef.id,
+          changedAt: serverTimestamp(),
+          PIC: user?.email || "System",
+          changeDescription: "Task created.",
         });
       }
-      
-      if (taskData.progress && originalTask.progress !== updatedTask.progress) {
-         await addDoc(collection(db, "taskHistories"), {
-            taskId,
-            changedAt: serverTimestamp(),
-            PIC: user?.email || "System",
-            changeDescription: "Progress note updated.",
-            changeDetail: updatedTask.progress,
-        });
-      }
-
-    } else {
-      // Create new task
-      const docRef = await addDoc(collection(db, "tasks"), {
-        ...taskData,
-        userId: user.uid,
-        createdAt: serverTimestamp(),
-      });
-      
-      await addDoc(collection(db, "taskHistories"), {
-        taskId: docRef.id,
-        changedAt: serverTimestamp(),
-        PIC: user?.email || "System",
-        changeDescription: "Task created.",
-      });
+      setIsFormOpen(false);
+      setSelectedTask(null);
+    } catch(error) {
+        console.error("Error saving task: ", error);
     }
-    setIsFormOpen(false);
-    setSelectedTask(null);
   };
   
   const handleSignOut = async () => {
