@@ -8,7 +8,7 @@ import { TaskTable } from "@/components/task-table";
 import { TaskFormDialog } from "@/components/task-form-dialog";
 import { TaskHistoryDialog } from "@/components/task-history-dialog";
 import { db } from "@/lib/firebase";
-import { getAuth, onAuthStateChanged, signOut, type User } from "firebase/auth";
+import { getAuth, onAuthStateChanged, signOut, type User as FirebaseUser } from "firebase/auth";
 import {
   collection,
   addDoc,
@@ -23,6 +23,8 @@ import {
   where,
   getDocs,
   writeBatch,
+  setDoc,
+  getDoc,
 } from "firebase/firestore";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
@@ -33,15 +35,28 @@ export default function Home() {
   const [selectedTask, setSelectedTask] = React.useState<Task | null>(null);
   const [isFormOpen, setIsFormOpen] = React.useState(false);
   const [isHistoryOpen, setIsHistoryOpen] = React.useState(false);
-  const [user, setUser] = React.useState<User | null>(null);
+  const [user, setUser] = React.useState<FirebaseUser | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
   const router = useRouter();
   const auth = getAuth();
 
   React.useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (user) {
-        setUser(user);
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      if (firebaseUser) {
+        setUser(firebaseUser);
+
+        // Check for user document in Firestore and create if it doesn't exist
+        const userRef = doc(db, "users", firebaseUser.uid);
+        const userSnap = await getDoc(userRef);
+
+        if (!userSnap.exists()) {
+          await setDoc(userRef, {
+            uid: firebaseUser.uid,
+            email: firebaseUser.email,
+            // You can add more fields here, like displayName or photoURL
+          });
+        }
+        
         setIsLoading(false);
       } else {
         router.push('/login');
