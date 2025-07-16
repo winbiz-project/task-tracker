@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from "react";
@@ -144,8 +145,8 @@ export default function Home() {
         const historySnapshot = await getDocs(historyQuery);
         
         // Add delete operations for each history document to the batch
-        historySnapshot.forEach((doc) => {
-            batch.delete(doc.ref);
+        historySnapshot.forEach((historyDoc) => {
+            batch.delete(historyDoc.ref);
         });
         
         // Add delete operation for the main task document to the batch
