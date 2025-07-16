@@ -15,7 +15,6 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Icons } from "@/components/icons";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
 
@@ -67,9 +66,6 @@ export default function LoginPage() {
     <div className="flex h-screen w-full items-center justify-center bg-background px-4">
        <Card className="w-full max-w-sm">
         <CardHeader className="text-center">
-            <div className="mb-4 flex justify-center">
-                <Icons.logo className="h-10 w-10 text-primary" />
-            </div>
           <CardTitle className="font-headline text-2xl">Welcome Back</CardTitle>
           <CardDescription>Enter your credentials to access your tasks.</CardDescription>
         </CardHeader>
