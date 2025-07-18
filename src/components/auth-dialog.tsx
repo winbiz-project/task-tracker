@@ -9,7 +9,8 @@ import {
   signInWithPopup,
   updateProfile
 } from "firebase/auth";
-import { auth } from "@/lib/firebase";
+import { auth, db } from "@/lib/firebase";
+import { doc, setDoc } from "firebase/firestore";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -54,6 +55,14 @@ export function AuthDialog({ isOpen, onOpenChange }: AuthDialogProps) {
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         if (userCredential.user) {
             await updateProfile(userCredential.user, { displayName });
+            
+            // Explicitly create the user document in Firestore here
+            const userRef = doc(db, "users", userCredential.user.uid);
+            await setDoc(userRef, {
+              uid: userCredential.user.uid,
+              email: userCredential.user.email,
+              displayName: displayName,
+            });
         }
       }
       onOpenChange(false); // Close dialog on success
