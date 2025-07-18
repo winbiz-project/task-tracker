@@ -1,7 +1,8 @@
+
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { PlusCircle, LogOut, LogIn } from "lucide-react";
+import { PlusCircle, LogOut, LogIn, User } from "lucide-react";
 import { Icons } from "@/components/icons";
 import {
   DropdownMenu,
@@ -18,16 +19,25 @@ interface AppHeaderProps {
   onNewTaskClick: () => void;
   onSignOut: () => void;
   onLoginClick: () => void;
+  onEditProfileClick: () => void;
   userName?: string | null;
   userEmail?: string | null;
 }
 
-export function AppHeader({ isLoggedIn, onNewTaskClick, onSignOut, onLoginClick, userName, userEmail }: AppHeaderProps) {
+export function AppHeader({ 
+  isLoggedIn, 
+  onNewTaskClick, 
+  onSignOut, 
+  onLoginClick, 
+  onEditProfileClick,
+  userName, 
+  userEmail 
+}: AppHeaderProps) {
   
   const getInitials = (name?: string | null) => {
     if (!name) return "?";
     const names = name.split(' ');
-    if (names.length > 1) {
+    if (names.length > 1 && names[1]) {
       return names[0].charAt(0).toUpperCase() + names[1].charAt(0).toUpperCase();
     }
     return name.charAt(0).toUpperCase();
@@ -67,6 +77,11 @@ export function AppHeader({ isLoggedIn, onNewTaskClick, onSignOut, onLoginClick,
                     </p>
                   </div>
                 </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={onEditProfileClick}>
+                  <User className="mr-2 h-4 w-4" />
+                  <span>Edit Profile</span>
+                </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={onSignOut}>
                   <LogOut className="mr-2 h-4 w-4" />

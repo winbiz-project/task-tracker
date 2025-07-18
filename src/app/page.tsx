@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from "react";
@@ -7,7 +8,7 @@ import { TaskTable } from "@/components/task-table";
 import { TaskFormDialog } from "@/components/task-form-dialog";
 import { TaskHistoryDialog } from "@/components/task-history-dialog";
 import { db } from "@/lib/firebase";
-import { getAuth, onAuthStateChanged, signOut, type User as FirebaseUser } from "firebase/auth";
+import { getAuth, onAuthStateChanged, signOut, type User as FirebaseUser, updateProfile } from "firebase/auth";
 import {
   collection,
   addDoc,
@@ -28,6 +29,8 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { AuthDialog } from "@/components/auth-dialog";
+import { UserProfileDialog } from "@/components/user-profile-dialog";
+import { useToast } from "@/hooks/use-toast";
 
 export default function Home() {
   const [tasks, setTasks] = React.useState<Task[]>([]);
@@ -36,9 +39,11 @@ export default function Home() {
   const [isFormOpen, setIsFormOpen] = React.useState(false);
   const [isHistoryOpen, setIsHistoryOpen] = React.useState(false);
   const [isAuthDialogOpen, setIsAuthDialogOpen] = React.useState(false);
+  const [isProfileDialogOpen, setIsProfileDialogOpen] = React.useState(false);
   const [user, setUser] = React.useState<FirebaseUser | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
   const auth = getAuth();
+  const { toast } = useToast();
 
   React.useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
@@ -174,7 +179,7 @@ export default function Home() {
         return; 
     }
 
-    const historyData: Omit<TaskHistory, "id" | "changedAt"> & { changedAt: any } = {
+    const historyData: Omit<TaskHistory, "id" | "changedAt" | "changeDetail"> & { changedAt: any } = {
         taskId: taskId,
         changedAt: serverTimestamp(),
         PIC: user?.displayName || user?.email || "System", 
@@ -239,6 +244,35 @@ export default function Home() {
     }
   };
 
+  const handleUpdateUser = async (updatedData: { displayName: string }) => {
+    if (!user) return;
+    try {
+      // Update Firebase Auth profile
+      await updateProfile(user, { displayName: updatedData.displayName });
+
+      // Update Firestore user document
+      const userRef = doc(db, "users", user.uid);
+      await updateDoc(userRef, { displayName: updatedData.displayName });
+
+      // Force a refresh of the user object to get the latest data
+      await auth.currentUser?.reload();
+      setUser(auth.currentUser);
+
+      toast({
+        title: "Success",
+        description: "Your profile has been updated.",
+      });
+      setIsProfileDialogOpen(false);
+    } catch (error: any) {
+      console.error("Error updating profile:", error);
+      toast({
+        title: "Update Failed",
+        description: error.message || "Could not update your profile.",
+        variant: "destructive",
+      });
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex h-full w-full flex-col">
@@ -270,6 +304,7 @@ export default function Home() {
         onNewTaskClick={() => handleOpenForm()} 
         onSignOut={handleSignOut} 
         onLoginClick={() => setIsAuthDialogOpen(true)}
+        onEditProfileClick={() => setIsProfileDialogOpen(true)}
         userName={user?.displayName}
         userEmail={user?.email} 
       />
@@ -314,6 +349,13 @@ export default function Home() {
       <AuthDialog
         isOpen={isAuthDialogOpen}
         onOpenChange={setIsAuthDialogOpen}
+      />
+
+      <UserProfileDialog
+        isOpen={isProfileDialogOpen}
+        onOpenChange={setIsProfileDialogOpen}
+        user={user}
+        onSave={handleUpdateUser}
       />
     </div>
   );
