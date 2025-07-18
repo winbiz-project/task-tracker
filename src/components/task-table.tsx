@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from "react";
@@ -27,6 +28,8 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { TaskActions } from "@/components/task-actions";
 import { Input } from "@/components/ui/input";
+import { ArrowUpDown } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface TaskTableProps {
   tasks: Task[];
@@ -37,6 +40,7 @@ interface TaskTableProps {
 }
 
 type EditableField = 'taskName' | 'PIC' | 'progress';
+type SortableField = keyof Omit<Task, 'id' | 'userId' | 'description'>;
 
 type EditingCell = {
   taskId: string;
@@ -55,12 +59,53 @@ export function TaskTable({
   const [editingCell, setEditingCell] = React.useState<EditingCell>(null);
   const [editValue, setEditValue] = React.useState("");
   const inputRef = React.useRef<HTMLInputElement>(null);
+  const [sortConfig, setSortConfig] = React.useState<{ key: SortableField; direction: 'ascending' | 'descending' } | null>({ key: 'createdAt', direction: 'descending' });
 
   React.useEffect(() => {
     if (editingCell && inputRef.current) {
       inputRef.current.focus();
     }
   }, [editingCell]);
+  
+  const sortedTasks = React.useMemo(() => {
+    let sortableTasks = [...tasks];
+    if (sortConfig !== null) {
+      sortableTasks.sort((a, b) => {
+        const aValue = a[sortConfig.key];
+        const bValue = b[sortConfig.key];
+  
+        if (aValue === undefined || aValue === null) return 1;
+        if (bValue === undefined || bValue === null) return -1;
+  
+        if (aValue < bValue) {
+          return sortConfig.direction === 'ascending' ? -1 : 1;
+        }
+        if (aValue > bValue) {
+          return sortConfig.direction === 'ascending' ? 1 : -1;
+        }
+        return 0;
+      });
+    }
+    return sortableTasks;
+  }, [tasks, sortConfig]);
+
+  const requestSort = (key: SortableField) => {
+    let direction: 'ascending' | 'descending' = 'ascending';
+    if (sortConfig && sortConfig.key === key && sortConfig.direction === 'ascending') {
+      direction = 'descending';
+    }
+    setSortConfig({ key, direction });
+  };
+
+  const getSortIndicator = (key: SortableField) => {
+    if (!sortConfig || sortConfig.key !== key) {
+      return <ArrowUpDown className="ml-2 h-4 w-4 text-muted-foreground/50" />;
+    }
+    if (sortConfig.direction === 'ascending') {
+      return <ArrowUpDown className="ml-2 h-4 w-4" />;
+    }
+    return <ArrowUpDown className="ml-2 h-4 w-4" />;
+  };
 
   const getStatusBadgeVariant = (status: Task["status"]) => {
     switch (status) {
@@ -130,6 +175,15 @@ export function TaskTable({
     )
   }
 
+  const renderHeader = (label: string, key: SortableField) => (
+      <TableHead>
+          <Button variant="ghost" onClick={() => requestSort(key)} className="-ml-4">
+              {label}
+              {getSortIndicator(key)}
+          </Button>
+      </TableHead>
+  );
+
   return (
     <>
       {/* Desktop View */}
@@ -137,16 +191,16 @@ export function TaskTable({
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-[30%]">Task Name</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>PIC</TableHead>
-              <TableHead>Progress</TableHead>
-              <TableHead>Created</TableHead>
+              {renderHeader('Task Name', 'taskName')}
+              {renderHeader('Status', 'status')}
+              {renderHeader('PIC', 'PIC')}
+              {renderHeader('Progress', 'progress')}
+              {renderHeader('Created', 'createdAt')}
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {tasks.map((task) => (
+            {sortedTasks.map((task) => (
               <TableRow key={task.id}>
                 <TableCell className="font-medium">
                   {renderEditableCell(task, 'taskName')}
@@ -194,7 +248,7 @@ export function TaskTable({
 
       {/* Mobile View */}
       <div className="grid gap-4 md:hidden">
-        {tasks.map((task) => (
+        {sortedTasks.map((task) => (
           <Card key={task.id}>
             <CardHeader>
               <CardTitle>
