@@ -2,7 +2,7 @@
 "use client";
 
 import * as React from "react";
-import { formatDistanceToNow } from "date-fns";
+import { format, formatDistanceToNow, isSameDay } from "date-fns";
 import type { Task, TaskStatus } from "@/lib/types";
 import {
   Table,
@@ -25,11 +25,19 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { TaskActions } from "@/components/task-actions";
 import { Input } from "@/components/ui/input";
-import { ArrowUpDown } from "lucide-react";
+import { ArrowUpDown, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { DatePicker } from "@/components/ui/date-picker";
 
 interface TaskTableProps {
   tasks: Task[];
@@ -59,7 +67,14 @@ export function TaskTable({
   const [editingCell, setEditingCell] = React.useState<EditingCell>(null);
   const [editValue, setEditValue] = React.useState("");
   const inputRef = React.useRef<HTMLInputElement>(null);
+  
+  // Sorting state
   const [sortConfig, setSortConfig] = React.useState<{ key: SortableField; direction: 'ascending' | 'descending' } | null>({ key: 'createdAt', direction: 'descending' });
+
+  // Filtering state
+  const [statusFilter, setStatusFilter] = React.useState<string>("All");
+  const [picFilter, setPicFilter] = React.useState<string>("");
+  const [dateFilter, setDateFilter] = React.useState<Date | undefined>(undefined);
 
   React.useEffect(() => {
     if (editingCell && inputRef.current) {
@@ -67,10 +82,23 @@ export function TaskTable({
     }
   }, [editingCell]);
   
-  const sortedTasks = React.useMemo(() => {
-    let sortableTasks = [...tasks];
+  const filteredAndSortedTasks = React.useMemo(() => {
+    let processableTasks = [...tasks];
+
+    // Apply filters
+    if (statusFilter !== "All") {
+      processableTasks = processableTasks.filter(task => task.status === statusFilter);
+    }
+    if (picFilter) {
+      processableTasks = processableTasks.filter(task => task.PIC.toLowerCase().includes(picFilter.toLowerCase()));
+    }
+    if (dateFilter) {
+      processableTasks = processableTasks.filter(task => isSameDay(task.createdAt, dateFilter));
+    }
+
+    // Apply sorting
     if (sortConfig !== null) {
-      sortableTasks.sort((a, b) => {
+      processableTasks.sort((a, b) => {
         const aValue = a[sortConfig.key];
         const bValue = b[sortConfig.key];
   
@@ -86,8 +114,8 @@ export function TaskTable({
         return 0;
       });
     }
-    return sortableTasks;
-  }, [tasks, sortConfig]);
+    return processableTasks;
+  }, [tasks, sortConfig, statusFilter, picFilter, dateFilter]);
 
   const requestSort = (key: SortableField) => {
     let direction: 'ascending' | 'descending' = 'ascending';
@@ -185,7 +213,29 @@ export function TaskTable({
   );
 
   return (
-    <>
+    <div className="space-y-4">
+      <div className="flex flex-col gap-4 md:flex-row md:items-center">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 md:flex-1">
+          <Input
+            placeholder="Filter by PIC..."
+            value={picFilter}
+            onChange={(e) => setPicFilter(e.target.value)}
+          />
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger>
+              <SelectValue placeholder="Filter by status..." />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="All">All Statuses</SelectItem>
+              {statusOptions.map(status => (
+                <SelectItem key={status} value={status}>{status}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <DatePicker date={dateFilter} setDate={setDateFilter} />
+        </div>
+      </div>
+
       {/* Desktop View */}
       <Card className="hidden md:block">
         <Table>
@@ -200,7 +250,7 @@ export function TaskTable({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {sortedTasks.map((task) => (
+            {filteredAndSortedTasks.map((task) => (
               <TableRow key={task.id}>
                 <TableCell className="font-medium">
                   {renderEditableCell(task, 'taskName')}
@@ -230,7 +280,7 @@ export function TaskTable({
                   {renderEditableCell(task, 'progress')}
                 </TableCell>
                 <TableCell>
-                  {formatDistanceToNow(task.createdAt, { addSuffix: true })}
+                  {format(task.createdAt, 'dd MMM yyyy')}
                 </TableCell>
                 <TableCell className="text-right">
                   <TaskActions
@@ -248,7 +298,7 @@ export function TaskTable({
 
       {/* Mobile View */}
       <div className="grid gap-4 md:hidden">
-        {sortedTasks.map((task) => (
+        {filteredAndSortedTasks.map((task) => (
           <Card key={task.id}>
             <CardHeader>
               <CardTitle>
@@ -290,6 +340,6 @@ export function TaskTable({
           </Card>
         ))}
       </div>
-    </>
+    </div>
   );
 }
