@@ -152,8 +152,6 @@ export default function Home() {
     await updateDoc(taskRef, updatedFields);
 
     let changeDescription = '';
-    let changeDetail: string | undefined = undefined;
-
     const fieldMapping: Record<string, string> = {
         taskName: "Task name",
         PIC: "PIC",
@@ -168,7 +166,6 @@ export default function Home() {
     if (oldValue !== newValue) {
         if (changedField === 'progress') {
             changeDescription = 'Progress note updated.';
-            changeDetail = newValue as string;
         } else {
              changeDescription = `${fieldMapping[changedField]} changed from "${oldValue}" to "${newValue}".`;
         }
@@ -182,11 +179,7 @@ export default function Home() {
         PIC: user?.email || "System", 
         changeDescription,
     };
-
-    if (changeDetail) {
-      historyData.changeDetail = changeDetail;
-    }
-
+    
     await addDoc(collection(db, "taskHistories"), historyData);
   };
 
@@ -306,6 +299,7 @@ export default function Home() {
         onSave={handleSaveTask}
         task={selectedTask}
         taskHistories={taskHistories}
+        currentUserEmail={user?.email}
       />
       
       <TaskHistoryDialog
