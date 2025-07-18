@@ -15,8 +15,11 @@ A simple and powerful to-do list tracker built with Next.js and Firebase. It all
 - **Real-Time Database**: Utilizes Firebase Firestore for live data synchronization across all clients.
 - **Full Task Management (CRUD)**: Create, read, update, and delete tasks with real-time UI feedback.
 - **Interactive Task Table**:
-    - Inline editing for task name, person-in-charge (PIC), and progress notes directly in the table.
-    - Quick status changes via a dropdown menu.
+    - **Global Search**: Find tasks instantly by searching across names, descriptions, and progress notes.
+    - **Advanced Filtering**: Filter tasks by status, person-in-charge (PIC), or creation date.
+    - **Sortable Columns**: Sort the task list by any column to organize your view.
+    - **Inline Editing**: Update the task name, PIC, and progress notes directly in the table.
+    - **Quick Status Changes**: Change a task's status with a simple dropdown menu in the table.
 - **AI-Powered Description Generation**: Uses Google's Gemini model via Genkit to automatically generate detailed task descriptions based on the task name.
 - **Detailed Task History**: A comprehensive activity log for each task, showing who made what change and when.
 - **Responsive Design**: A clean, intuitive UI that works seamlessly on both desktop and mobile devices.
