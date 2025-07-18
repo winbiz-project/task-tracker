@@ -54,10 +54,10 @@ interface TaskFormDialogProps {
   onSave: (data: Omit<Task, "id" | "createdAt" | "userId">, taskId?: string) => void;
   task: Task | null;
   taskHistories: TaskHistory[];
-  currentUserEmail?: string | null;
+  currentUserPIC?: string | null;
 }
 
-export function TaskFormDialog({ isOpen, onOpenChange, onSave, task, currentUserEmail }: TaskFormDialogProps) {
+export function TaskFormDialog({ isOpen, onOpenChange, onSave, task, currentUserPIC }: TaskFormDialogProps) {
   const { toast } = useToast();
   const [isGenerating, setIsGenerating] = React.useState(false);
 
@@ -79,14 +79,14 @@ export function TaskFormDialog({ isOpen, onOpenChange, onSave, task, currentUser
         } else {
           form.reset({
             taskName: "",
-            PIC: currentUserEmail || "",
+            PIC: currentUserPIC || "",
             description: "",
             progress: "",
             status: "On-going",
           });
         }
     }
-  }, [task, form, isOpen, currentUserEmail]);
+  }, [task, form, isOpen, currentUserPIC]);
 
   const handleGenerateDescription = async () => {
     setIsGenerating(true);

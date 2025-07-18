@@ -18,13 +18,19 @@ interface AppHeaderProps {
   onNewTaskClick: () => void;
   onSignOut: () => void;
   onLoginClick: () => void;
+  userName?: string | null;
   userEmail?: string | null;
 }
 
-export function AppHeader({ isLoggedIn, onNewTaskClick, onSignOut, onLoginClick, userEmail }: AppHeaderProps) {
+export function AppHeader({ isLoggedIn, onNewTaskClick, onSignOut, onLoginClick, userName, userEmail }: AppHeaderProps) {
   
-  const getInitials = (email?: string | null) => {
-    return email ? email.charAt(0).toUpperCase() : '?';
+  const getInitials = (name?: string | null) => {
+    if (!name) return "?";
+    const names = name.split(' ');
+    if (names.length > 1) {
+      return names[0].charAt(0).toUpperCase() + names[1].charAt(0).toUpperCase();
+    }
+    return name.charAt(0).toUpperCase();
   }
 
   return (
@@ -48,14 +54,14 @@ export function AppHeader({ isLoggedIn, onNewTaskClick, onSignOut, onLoginClick,
                 <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                   <Avatar className="h-8 w-8">
                     <AvatarImage src="#" alt="User Avatar" />
-                    <AvatarFallback>{getInitials(userEmail)}</AvatarFallback>
+                    <AvatarFallback>{getInitials(userName)}</AvatarFallback>
                   </Avatar>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent className="w-56" align="end" forceMount>
                 <DropdownMenuLabel className="font-normal">
                   <div className="flex flex-col space-y-1">
-                    <p className="text-sm font-medium leading-none">Logged in as</p>
+                    <p className="text-sm font-medium leading-none">{userName}</p>
                     <p className="text-xs leading-none text-muted-foreground">
                       {userEmail}
                     </p>

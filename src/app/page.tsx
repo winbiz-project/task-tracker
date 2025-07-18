@@ -50,6 +50,7 @@ export default function Home() {
           await setDoc(userRef, {
             uid: firebaseUser.uid,
             email: firebaseUser.email,
+            displayName: firebaseUser.displayName,
           });
         }
         setIsAuthDialogOpen(false);
@@ -147,7 +148,7 @@ export default function Home() {
   const handleUpdateTask = async (taskId: string, updatedFields: Partial<Omit<Task, "id" | "createdAt" | "userId">>) => {
     const originalTask = tasks.find(t => t.id === taskId);
     if (!originalTask || !user) return;
-    
+
     const taskRef = doc(db, "tasks", taskId);
     await updateDoc(taskRef, updatedFields);
 
@@ -176,7 +177,7 @@ export default function Home() {
     const historyData: Omit<TaskHistory, "id" | "changedAt"> & { changedAt: any } = {
         taskId: taskId,
         changedAt: serverTimestamp(),
-        PIC: user?.email || "System", 
+        PIC: user?.displayName || user?.email || "System", 
         changeDescription,
     };
     
@@ -204,7 +205,7 @@ export default function Home() {
                 batch.set(historyRef, {
                     taskId,
                     changedAt: serverTimestamp(),
-                    PIC: user?.email || "System",
+                    PIC: user?.displayName || user?.email || "System",
                     changeDescription: "Task details updated.",
                     changeDetail: changes.join('\n'),
                 });
@@ -219,7 +220,7 @@ export default function Home() {
             await addDoc(collection(db, "taskHistories"), {
                 taskId: docRef.id,
                 changedAt: serverTimestamp(),
-                PIC: user?.email || "System",
+                PIC: user?.displayName || user?.email || "System",
                 changeDescription: "Task created.",
             });
         }
@@ -269,6 +270,7 @@ export default function Home() {
         onNewTaskClick={() => handleOpenForm()} 
         onSignOut={handleSignOut} 
         onLoginClick={() => setIsAuthDialogOpen(true)}
+        userName={user?.displayName}
         userEmail={user?.email} 
       />
       <main className="flex-1 overflow-y-auto p-4 md:p-8">
@@ -299,7 +301,7 @@ export default function Home() {
         onSave={handleSaveTask}
         task={selectedTask}
         taskHistories={taskHistories}
-        currentUserEmail={user?.email}
+        currentUserPIC={user?.displayName || user?.email}
       />
       
       <TaskHistoryDialog

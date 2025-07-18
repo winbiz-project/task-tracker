@@ -5,7 +5,8 @@ import {
   signInWithEmailAndPassword, 
   createUserWithEmailAndPassword, 
   GoogleAuthProvider, 
-  signInWithPopup 
+  signInWithPopup,
+  updateProfile
 } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { Button } from "@/components/ui/button";
@@ -28,6 +29,7 @@ interface AuthDialogProps {
 }
 
 export function AuthDialog({ isOpen, onOpenChange }: AuthDialogProps) {
+  const [displayName, setDisplayName] = React.useState("");
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
   const [isLoading, setIsLoading] = React.useState(false);
@@ -39,7 +41,19 @@ export function AuthDialog({ isOpen, onOpenChange }: AuthDialogProps) {
       if (action === "login") {
         await signInWithEmailAndPassword(auth, email, password);
       } else {
-        await createUserWithEmailAndPassword(auth, email, password);
+        if (!displayName.trim()) {
+            toast({
+                title: "Registration Failed",
+                description: "Please enter a user name.",
+                variant: "destructive",
+            });
+            setIsLoading(false);
+            return;
+        }
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        if (userCredential.user) {
+            await updateProfile(userCredential.user, { displayName });
+        }
       }
       onOpenChange(false); // Close dialog on success
     } catch (error: any) {
@@ -74,6 +88,7 @@ export function AuthDialog({ isOpen, onOpenChange }: AuthDialogProps) {
 
   React.useEffect(() => {
     if (!isOpen) {
+      setDisplayName("");
       setEmail("");
       setPassword("");
     }
@@ -82,6 +97,20 @@ export function AuthDialog({ isOpen, onOpenChange }: AuthDialogProps) {
   const renderForm = (action: "login" | "register") => (
     <form onSubmit={(e) => { e.preventDefault(); handleAuth(action); }}>
       <div className="grid gap-4">
+        {action === "register" && (
+            <div className="grid gap-2">
+                <Label htmlFor="register-name">User Name</Label>
+                <Input
+                    id="register-name"
+                    type="text"
+                    placeholder="e.g. John Doe"
+                    required
+                    value={displayName}
+                    onChange={(e) => setDisplayName(e.target.value)}
+                    disabled={isLoading}
+                />
+            </div>
+        )}
         <div className="grid gap-2">
           <Label htmlFor={`${action}-email`}>Email</Label>
           <Input
