@@ -8,7 +8,7 @@ import { TaskTable } from "@/components/task-table";
 import { TaskFormDialog } from "@/components/task-form-dialog";
 import { TaskHistoryDialog } from "@/components/task-history-dialog";
 import { db } from "@/lib/firebase";
-import { getAuth, onAuthStateChanged, signOut, type User as FirebaseUser, updateProfile } from "firebase/auth";
+import { getAuth, onAuthStateChanged, signOut, type User as FirebaseUser, updateProfile, updatePassword } from "firebase/auth";
 import {
   collection,
   addDoc,
@@ -30,6 +30,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { AuthDialog } from "@/components/auth-dialog";
 import { UserProfileDialog } from "@/components/user-profile-dialog";
+import { ChangePasswordDialog } from "@/components/change-password-dialog";
 import { useToast } from "@/hooks/use-toast";
 
 export default function Home() {
@@ -40,6 +41,7 @@ export default function Home() {
   const [isHistoryOpen, setIsHistoryOpen] = React.useState(false);
   const [isAuthDialogOpen, setIsAuthDialogOpen] = React.useState(false);
   const [isProfileDialogOpen, setIsProfileDialogOpen] = React.useState(false);
+  const [isChangePasswordOpen, setIsChangePasswordOpen] = React.useState(false);
   const [user, setUser] = React.useState<FirebaseUser | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
   const auth = getAuth();
@@ -147,6 +149,11 @@ export default function Home() {
       await batch.commit();
     } catch (error) {
       console.error("Error deleting task and its history: ", error);
+      toast({
+        title: "Deletion Failed",
+        description: "Could not delete the task. Please check permissions.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -179,12 +186,15 @@ export default function Home() {
         return; 
     }
 
-    const historyData: Omit<TaskHistory, "id" | "changedAt" | "changeDetail"> & { changedAt: any } = {
+    const historyData: Omit<TaskHistory, "id" | "changedAt"> & { changedAt: any } = {
         taskId: taskId,
         changedAt: serverTimestamp(),
         PIC: user?.displayName || user?.email || "System", 
         changeDescription,
     };
+    if (historyData.changeDetail === undefined) {
+      delete historyData.changeDetail;
+    }
     
     await addDoc(collection(db, "taskHistories"), historyData);
   };
@@ -273,6 +283,29 @@ export default function Home() {
     }
   };
 
+  const handleUpdatePassword = async (newPassword: string) => {
+    if (!user) return;
+    try {
+      await updatePassword(user, newPassword);
+      toast({
+        title: "Success",
+        description: "Your password has been changed.",
+      });
+      setIsChangePasswordOpen(false);
+    } catch (error: any) {
+      console.error("Error updating password:", error);
+      let description = "Could not update your password. Please try again.";
+      if (error.code === 'auth/requires-recent-login') {
+        description = "This operation is sensitive. Please log out and log back in before changing your password.";
+      }
+      toast({
+        title: "Update Failed",
+        description,
+        variant: "destructive",
+      });
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex h-full w-full flex-col">
@@ -356,6 +389,16 @@ export default function Home() {
         onOpenChange={setIsProfileDialogOpen}
         user={user}
         onSave={handleUpdateUser}
+        onChangePasswordClick={() => {
+          setIsProfileDialogOpen(false);
+          setIsChangePasswordOpen(true);
+        }}
+      />
+      
+      <ChangePasswordDialog
+        isOpen={isChangePasswordOpen}
+        onOpenChange={setIsChangePasswordOpen}
+        onSave={handleUpdatePassword}
       />
     </div>
   );

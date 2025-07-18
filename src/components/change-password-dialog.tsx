@@ -6,7 +6,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
 import { Loader2 } from "lucide-react";
-import { type User as FirebaseUser } from "firebase/auth";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -26,43 +25,43 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Separator } from "./ui/separator";
 
-const profileSchema = z.object({
-  displayName: z.string().min(1, "Name is required"),
+const passwordSchema = z.object({
+  newPassword: z.string().min(6, "Password must be at least 6 characters"),
+  confirmPassword: z.string(),
+}).refine((data) => data.newPassword === data.confirmPassword, {
+  message: "Passwords do not match",
+  path: ["confirmPassword"],
 });
 
-type ProfileFormData = z.infer<typeof profileSchema>;
+type PasswordFormData = z.infer<typeof passwordSchema>;
 
-interface UserProfileDialogProps {
+interface ChangePasswordDialogProps {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
-  user: FirebaseUser | null;
-  onSave: (data: ProfileFormData) => Promise<void>;
-  onChangePasswordClick: () => void;
+  onSave: (password: string) => Promise<void>;
 }
 
-export function UserProfileDialog({ isOpen, onOpenChange, user, onSave, onChangePasswordClick }: UserProfileDialogProps) {
+export function ChangePasswordDialog({ isOpen, onOpenChange, onSave }: ChangePasswordDialogProps) {
   const [isLoading, setIsLoading] = React.useState(false);
 
-  const form = useForm<ProfileFormData>({
-    resolver: zodResolver(profileSchema),
+  const form = useForm<PasswordFormData>({
+    resolver: zodResolver(passwordSchema),
     defaultValues: {
-      displayName: "",
+      newPassword: "",
+      confirmPassword: "",
     },
   });
 
   React.useEffect(() => {
-    if (user) {
-      form.reset({
-        displayName: user.displayName || "",
-      });
+    if (!isOpen) {
+      form.reset();
     }
-  }, [user, form, isOpen]);
+  }, [isOpen, form]);
 
-  const onSubmit = async (data: ProfileFormData) => {
+  const onSubmit = async (data: PasswordFormData) => {
     setIsLoading(true);
-    await onSave(data);
+    await onSave(data.newPassword);
     setIsLoading(false);
   };
 
@@ -70,51 +69,48 @@ export function UserProfileDialog({ isOpen, onOpenChange, user, onSave, onChange
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle className="font-headline">Edit Profile</DialogTitle>
+          <DialogTitle className="font-headline">Change Password</DialogTitle>
           <DialogDescription>
-            Update your account details. Click save when you're done.
+            Enter your new password below.
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
               control={form.control}
-              name="displayName"
+              name="newPassword"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Name</FormLabel>
+                  <FormLabel>New Password</FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g., John Doe" {...field} />
+                    <Input type="password" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-             <div className="grid gap-2">
-                <FormLabel>Email</FormLabel>
-                <Input
-                    type="email"
-                    value={user?.email || ""}
-                    disabled
-                />
-            </div>
-
+            <FormField
+              control={form.control}
+              name="confirmPassword"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Confirm New Password</FormLabel>
+                  <FormControl>
+                    <Input type="password" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             <DialogFooter>
               <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
               <Button type="submit" disabled={isLoading} className="bg-accent text-accent-foreground hover:bg-accent/90">
                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Save Changes
+                Save New Password
               </Button>
             </DialogFooter>
           </form>
         </Form>
-        <Separator />
-        <div className="space-y-4">
-          <h3 className="text-sm font-medium">Security</h3>
-          <Button variant="outline" className="w-full" onClick={onChangePasswordClick}>
-              Change Password
-          </Button>
-        </div>
       </DialogContent>
     </Dialog>
   );
