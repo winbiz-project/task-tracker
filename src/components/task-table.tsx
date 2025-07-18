@@ -35,7 +35,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { TaskActions } from "@/components/task-actions";
 import { Input } from "@/components/ui/input";
-import { ArrowUpDown, X } from "lucide-react";
+import { ArrowUpDown, Search, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DatePicker } from "@/components/ui/date-picker";
 
@@ -72,6 +72,7 @@ export function TaskTable({
   const [sortConfig, setSortConfig] = React.useState<{ key: SortableField; direction: 'ascending' | 'descending' } | null>({ key: 'createdAt', direction: 'descending' });
 
   // Filtering state
+  const [searchQuery, setSearchQuery] = React.useState<string>("");
   const [statusFilter, setStatusFilter] = React.useState<string>("All");
   const [picFilter, setPicFilter] = React.useState<string>("");
   const [dateFilter, setDateFilter] = React.useState<Date | undefined>(undefined);
@@ -84,6 +85,16 @@ export function TaskTable({
   
   const filteredAndSortedTasks = React.useMemo(() => {
     let processableTasks = [...tasks];
+
+    // Apply search
+    if (searchQuery) {
+        const lowercasedQuery = searchQuery.toLowerCase();
+        processableTasks = processableTasks.filter(task => 
+            task.taskName.toLowerCase().includes(lowercasedQuery) ||
+            (task.description && task.description.toLowerCase().includes(lowercasedQuery)) ||
+            (task.progress && task.progress.toLowerCase().includes(lowercasedQuery))
+        );
+    }
 
     // Apply filters
     if (statusFilter !== "All") {
@@ -115,7 +126,7 @@ export function TaskTable({
       });
     }
     return processableTasks;
-  }, [tasks, sortConfig, statusFilter, picFilter, dateFilter]);
+  }, [tasks, sortConfig, searchQuery, statusFilter, picFilter, dateFilter]);
 
   const requestSort = (key: SortableField) => {
     let direction: 'ascending' | 'descending' = 'ascending';
@@ -214,26 +225,35 @@ export function TaskTable({
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-col gap-4 md:flex-row md:items-center">
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 md:flex-1">
-          <Input
-            placeholder="Filter by PIC..."
-            value={picFilter}
-            onChange={(e) => setPicFilter(e.target.value)}
-          />
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger>
-              <SelectValue placeholder="Filter by status..." />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="All">All Statuses</SelectItem>
-              {statusOptions.map(status => (
-                <SelectItem key={status} value={status}>{status}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <DatePicker date={dateFilter} setDate={setDateFilter} />
-        </div>
+       <div className="flex flex-col gap-4 md:flex-row md:items-center">
+          <div className="relative md:flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                  placeholder="Search tasks..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10"
+              />
+          </div>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 md:flex-initial md:w-auto md:grid-cols-3">
+              <Input
+                  placeholder="Filter by PIC..."
+                  value={picFilter}
+                  onChange={(e) => setPicFilter(e.target.value)}
+              />
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                  <SelectTrigger>
+                      <SelectValue placeholder="Filter by status..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                      <SelectItem value="All">All Statuses</SelectItem>
+                      {statusOptions.map(status => (
+                          <SelectItem key={status} value={status}>{status}</SelectItem>
+                      ))}
+                  </SelectContent>
+              </Select>
+              <DatePicker date={dateFilter} setDate={setDateFilter} />
+          </div>
       </div>
 
       {/* Desktop View */}
