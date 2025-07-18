@@ -1,4 +1,4 @@
-# DW TaskTrack
+# TaskTrack
 
 ![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
 ![Framework: Next.js](https://img.shields.io/badge/Framework-Next.js-blue.svg)

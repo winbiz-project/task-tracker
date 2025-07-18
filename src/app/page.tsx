@@ -127,6 +127,7 @@ export default function Home() {
     if (!user) return;
     try {
       const batch = writeBatch(db);
+      
       const historyQuery = query(collection(db, "taskHistories"), where("taskId", "==", taskId));
       const historySnapshot = await getDocs(historyQuery);
       
@@ -290,7 +291,7 @@ export default function Home() {
           ) : (
             <div className="flex h-[calc(100vh-10rem)] items-center justify-center rounded-lg border border-dashed p-12 text-center">
               <div className="flex flex-col items-center gap-4">
-                  <h2 className="font-headline text-3xl font-semibold">Welcome to DW TaskTrack</h2>
+                  <h2 className="font-headline text-3xl font-semibold">Welcome to TaskTrack</h2>
                   <p className="max-w-md text-muted-foreground">The simple and powerful to-do list tracker. Please log in or register to manage your tasks.</p>
                   <Button size="lg" onClick={() => setIsAuthDialogOpen(true)}>Login / Register</Button>
               </div>
