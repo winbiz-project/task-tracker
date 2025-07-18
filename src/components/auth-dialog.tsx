@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from "react";
@@ -44,7 +45,7 @@ export function AuthDialog({ isOpen, onOpenChange }: AuthDialogProps) {
         if (!displayName.trim()) {
             toast({
                 title: "Registration Failed",
-                description: "Please enter a user name.",
+                description: "Please enter your name.",
                 variant: "destructive",
             });
             setIsLoading(false);
@@ -99,7 +100,7 @@ export function AuthDialog({ isOpen, onOpenChange }: AuthDialogProps) {
       <div className="grid gap-4">
         {action === "register" && (
             <div className="grid gap-2">
-                <Label htmlFor="register-name">User Name</Label>
+                <Label htmlFor="register-name">Name</Label>
                 <Input
                     id="register-name"
                     type="text"
