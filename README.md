@@ -6,23 +6,28 @@
 ![AI: Genkit](https://img.shields.io/badge/AI-Genkit-orange.svg)
 ![Database: Firestore](https://img.shields.io/badge/Database-Firestore-FFCA28?logo=firebase&logoColor=white)
 
-A simple and powerful to-do list tracker built with Next.js and Firebase. It allows users to manage tasks through an intuitive interface with features like inline editing, real-time updates, and AI-powered assistance for a streamlined workflow.
+A simple and powerful to-do list tracker built with Next.js and Firebase. It allows users to manage tasks through an intuitive interface with features like real-time updates, inline editing, and AI-powered assistance for a streamlined workflow.
 
 ## Key Features
 
-- **Real-Time Database**: Uses Firebase Firestore for live data synchronization across all clients.
-- **Task CRUD**: Create, read, update, and delete tasks with real-time UI feedback.
-- **Interactive Table**: A sortable, filterable, and paginated table for tasks with inline editing for task name, PIC, progress, and status.
-- **Activity Logger**: Track all changes to a task, including who made the change and when, with a detailed history modal.
-- **AI-Powered Description Generation**: Utilizes Google's Gemini model via Genkit to automatically generate detailed task descriptions based on the task name.
+- **User Authentication**: Secure user registration and login with Email/Password and Google providers.
+- **Profile Management**: Users can update their display name and change their password.
+- **Real-Time Database**: Utilizes Firebase Firestore for live data synchronization across all clients.
+- **Full Task Management (CRUD)**: Create, read, update, and delete tasks with real-time UI feedback.
+- **Interactive Task Table**:
+    - Inline editing for task name, person-in-charge (PIC), and progress notes directly in the table.
+    - Quick status changes via a dropdown menu.
+- **AI-Powered Description Generation**: Uses Google's Gemini model via Genkit to automatically generate detailed task descriptions based on the task name.
+- **Detailed Task History**: A comprehensive activity log for each task, showing who made what change and when.
+- **Responsive Design**: A clean, intuitive UI that works seamlessly on both desktop and mobile devices.
 
 ## Tech Stack
 
 - **Framework**: [Next.js](https://nextjs.org/) (with App Router)
 - **Language**: [TypeScript](https://www.typescriptlang.org/)
 - **Styling**: [Tailwind CSS](https://tailwindcss.com/) with [ShadCN UI](https://ui.shadcn.com/)
-- **Database**: [Firebase Firestore](https://firebase.google.com/docs/firestore)
-- **AI Integration**: [Genkit](https://firebase.google.com/docs/genkit)
+- **Authentication & Database**: [Firebase](https://firebase.google.com/) (Auth & Firestore)
+- **AI Integration**: [Google AI & Genkit](https://firebase.google.com/docs/genkit)
 - **UI**: [React](https://reactjs.org/)
 
 ## Getting Started
@@ -49,6 +54,13 @@ To run this project, you will need to add the following environment variables to
 
 - **`GOOGLE_API_KEY`**: Your API key for Google AI services. Required for AI features.
 - **`NEXT_PUBLIC_FIREBASE_*`**: Your Firebase project's web app configuration keys. You can find these in your Firebase project settings under **Project settings > General > Your apps > SDK setup and configuration > Config**.
+
+### Firebase Configuration
+
+1.  **Enable Firestore**: In your Firebase project, go to **Build > Firestore Database** and create a database.
+2.  **Enable Authentication Providers**:
+    - Go to **Build > Authentication** and select the **Sign-in method** tab.
+    - Enable the **Email/Password** and **Google** providers.
 
 ### How to Run
 
