@@ -1,3 +1,4 @@
+
 "use client";
 
 import type { Task, TaskHistory } from "@/lib/types";
@@ -66,7 +67,7 @@ export function TaskHistoryDialog({
                   <div>
                     <p className="font-medium">{entry.changeDescription}</p>
                     {entry.changeDetail && (
-                      <pre className="mt-2 border-l-2 pl-4 text-sm text-muted-foreground font-sans whitespace-pre-wrap">
+                      <pre className="mt-2 whitespace-pre-wrap font-sans text-sm text-muted-foreground border-l-2 pl-4">
                         {entry.changeDetail}
                       </pre>
                     )}

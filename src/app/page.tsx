@@ -179,8 +179,10 @@ export default function Home() {
     if (oldValue !== newValue) {
         if (changedField === 'progress') {
             changeDescription = 'Progress note updated.';
-        } else {
+        } else if (changedField === 'status') {
              changeDescription = `${fieldMapping[changedField]} changed from "${oldValue}" to "${newValue}".`;
+        } else {
+            return;
         }
     } else {
         return; 
