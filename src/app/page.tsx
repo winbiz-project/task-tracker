@@ -184,7 +184,7 @@ export default function Home() {
         } else if (changedFieldKey === 'status') {
              changeDescription = `changed from "${oldValue}" to "${newValue}".`;
         } else {
-            return;
+             changeDescription = `updated from "${oldValue}" to "${newValue}".`;
         }
     } else {
         return; 
@@ -240,24 +240,16 @@ export default function Home() {
             });
 
             const creationHistoryRef = doc(collection(db, "taskHistories"));
-            batch.set(creationHistoryRef, {
-                taskId: taskRef.id,
-                changedAt: serverTimestamp(),
-                PIC: user?.displayName || user?.email || "System",
-                changeField: "Task",
-                changeDescription: "created.",
-            });
-
-            if (taskData.progress) {
-                const progressHistoryRef = doc(collection(db, "taskHistories"));
-                batch.set(progressHistoryRef, {
-                    taskId: taskRef.id,
-                    changedAt: serverTimestamp(),
-                    PIC: user?.displayName || user?.email || "System",
-                    changeField: "Progress note",
-                    changeDescription: `added: "${taskData.progress}"`,
-                });
-            }
+            const creationHistory: Omit<TaskHistory, "id"> = {
+              taskId: taskRef.id,
+              changedAt: serverTimestamp(),
+              PIC: user?.displayName || user?.email || "System",
+              changeField: "Task",
+              changeDescription: "created.",
+              ...(taskData.progress && { changeDetail: `Initial progress note: "${taskData.progress}"` })
+            };
+            batch.set(creationHistoryRef, creationHistory);
+            
             await batch.commit();
         }
         setIsFormOpen(false);
@@ -424,5 +416,3 @@ export default function Home() {
     </div>
   );
 }
-
-    
