@@ -232,17 +232,33 @@ export default function Home() {
             }
             await batch.commit();
         } else {
-            const docRef = await addDoc(collection(db, "tasks"), {
+            const batch = writeBatch(db);
+            const taskRef = doc(collection(db, "tasks"));
+            batch.set(taskRef, {
                 ...taskData,
                 userId: user.uid,
             });
-            await addDoc(collection(db, "taskHistories"), {
-                taskId: docRef.id,
+
+            const creationHistoryRef = doc(collection(db, "taskHistories"));
+            batch.set(creationHistoryRef, {
+                taskId: taskRef.id,
                 changedAt: serverTimestamp(),
                 PIC: user?.displayName || user?.email || "System",
                 changeField: "Task",
                 changeDescription: "created.",
             });
+
+            if (taskData.progress) {
+                const progressHistoryRef = doc(collection(db, "taskHistories"));
+                batch.set(progressHistoryRef, {
+                    taskId: taskRef.id,
+                    changedAt: serverTimestamp(),
+                    PIC: user?.displayName || user?.email || "System",
+                    changeField: "Progress note",
+                    changeDescription: `added: "${taskData.progress}"`,
+                });
+            }
+            await batch.commit();
         }
         setIsFormOpen(false);
         setSelectedTask(null);
@@ -408,3 +424,5 @@ export default function Home() {
     </div>
   );
 }
+
+    
