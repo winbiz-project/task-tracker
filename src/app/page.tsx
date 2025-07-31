@@ -157,7 +157,7 @@ export default function Home() {
     }
   };
 
-  const handleUpdateTask = async (taskId: string, updatedFields: Partial<Omit<Task, "id" | "createdAt" | "userId">>) => {
+  const handleUpdateTask = async (taskId: string, updatedFields: Partial<Omit<Task, "id" | "userId">>) => {
     const originalTask = tasks.find(t => t.id === taskId);
     if (!originalTask || !user) return;
 
@@ -173,8 +173,8 @@ export default function Home() {
     };
 
     const changedField = Object.keys(updatedFields)[0] as keyof typeof updatedFields;
-    const oldValue = originalTask[changedField];
-    const newValue = updatedFields[changedField];
+    const oldValue = originalTask[changedField as keyof Task];
+    const newValue = updatedFields[changedField as keyof Omit<Task, "id" | "userId">];
 
     if (oldValue !== newValue) {
         if (changedField === 'progress') {
@@ -192,14 +192,11 @@ export default function Home() {
         PIC: user?.displayName || user?.email || "System", 
         changeDescription,
     };
-    if (historyData.changeDetail === undefined) {
-      delete historyData.changeDetail;
-    }
     
     await addDoc(collection(db, "taskHistories"), historyData);
   };
 
-  const handleSaveTask = async (taskData: Omit<Task, "id" | "createdAt" | "userId">, taskId?: string) => {
+  const handleSaveTask = async (taskData: Omit<Task, "id" | "userId">, taskId?: string) => {
     if (!user) return;
     try {
         if (taskId) {
@@ -215,6 +212,8 @@ export default function Home() {
             if (originalTask.description !== updatedTask.description) changes.push(`Description updated.`);
             if (originalTask.status !== updatedTask.status) changes.push(`Status changed from "${originalTask.status}" to "${updatedTask.status}".`);
             if (originalTask.progress !== updatedTask.progress) changes.push(`Progress note updated.`);
+            if ((originalTask.createdAt as Date).getTime() !== (updatedTask.createdAt as Date).getTime()) changes.push(`Date changed.`);
+
             if (changes.length > 0) {
                 const historyRef = doc(collection(db, "taskHistories"));
                 batch.set(historyRef, {
@@ -230,7 +229,6 @@ export default function Home() {
             const docRef = await addDoc(collection(db, "tasks"), {
                 ...taskData,
                 userId: user.uid,
-                createdAt: serverTimestamp(),
             });
             await addDoc(collection(db, "taskHistories"), {
                 taskId: docRef.id,

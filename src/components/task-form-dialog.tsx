@@ -4,7 +4,8 @@ import * as React from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
-import { Loader2, Sparkles } from "lucide-react";
+import { Loader2, Sparkles, CalendarIcon } from "lucide-react";
+import { format } from "date-fns";
 
 import { generateTaskDescription } from "@/ai/flows/generate-task-description";
 import { Button } from "@/components/ui/button";
@@ -35,10 +36,14 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import type { Task, TaskHistory, TaskStatus } from "@/lib/types";
+import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
+import { cn } from "@/lib/utils";
+import { Calendar } from "./ui/calendar";
 
 const taskSchema = z.object({
   taskName: z.string().min(1, "Task name is required"),
   PIC: z.string().min(1, "Person in charge is required"),
+  createdAt: z.date({ required_error: "A date is required."}),
   description: z.string().optional(),
   progress: z.string().optional(),
   status: z.enum(["On-going", "Hold", "Done"]),
@@ -51,7 +56,7 @@ const statusOptions: TaskStatus[] = ["On-going", "Hold", "Done"];
 interface TaskFormDialogProps {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
-  onSave: (data: Omit<Task, "id" | "createdAt" | "userId">, taskId?: string) => void;
+  onSave: (data: Omit<Task, "id" | "userId">, taskId?: string) => void;
   task: Task | null;
   taskHistories: TaskHistory[];
   currentUserPIC?: string | null;
@@ -66,6 +71,7 @@ export function TaskFormDialog({ isOpen, onOpenChange, onSave, task, currentUser
     defaultValues: {
       taskName: "",
       PIC: "",
+      createdAt: new Date(),
       description: "",
       progress: "",
       status: "On-going",
@@ -75,11 +81,15 @@ export function TaskFormDialog({ isOpen, onOpenChange, onSave, task, currentUser
   React.useEffect(() => {
     if (isOpen) {
         if (task) {
-          form.reset(task);
+          form.reset({
+            ...task,
+            createdAt: task.createdAt instanceof Date ? task.createdAt : (task.createdAt as any).toDate(),
+          });
         } else {
           form.reset({
             taskName: "",
             PIC: currentUserPIC || "",
+            createdAt: new Date(),
             description: "",
             progress: "",
             status: "On-going",
@@ -159,6 +169,47 @@ export function TaskFormDialog({ isOpen, onOpenChange, onSave, task, currentUser
                   <FormControl>
                     <Input placeholder="e.g., Alice Johnson" {...field} />
                   </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="createdAt"
+              render={({ field }) => (
+                <FormItem className="flex flex-col">
+                  <FormLabel>Date</FormLabel>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <FormControl>
+                        <Button
+                          variant={"outline"}
+                          className={cn(
+                            "w-full pl-3 text-left font-normal",
+                            !field.value && "text-muted-foreground"
+                          )}
+                        >
+                          {field.value ? (
+                            format(field.value, "PPP")
+                          ) : (
+                            <span>Pick a date</span>
+                          )}
+                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                        </Button>
+                      </FormControl>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={field.value}
+                        onSelect={field.onChange}
+                        disabled={(date) =>
+                          date > new Date() || date < new Date("1900-01-01")
+                        }
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
                   <FormMessage />
                 </FormItem>
               )}
