@@ -1,0 +1,25 @@
+
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Users can read and update their own user document.
+    match /users/{userId} {
+      allow read, update: if request.auth.uid == userId;
+      allow create: if request.auth.uid != null;
+    }
+
+    // Users can CRUD tasks that they own.
+    match /tasks/{taskId} {
+      allow read, update, delete: if request.auth.uid == resource.data.userId;
+      allow create: if request.auth.uid == request.resource.data.userId;
+    }
+
+    // Users can create and read history for tasks they own.
+    match /taskHistories/{historyId} {
+      allow read: if get(/databases/$(database)/documents/tasks/$(resource.data.taskId)).data.userId == request.auth.uid;
+      allow create: if get(/databases/$(database)/documents/tasks/$(request.resource.data.taskId)).data.userId == request.auth.uid;
+    }
+  }
+}
