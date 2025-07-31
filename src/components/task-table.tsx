@@ -265,7 +265,7 @@ export function TaskTable({
               {renderHeader('Status', 'status')}
               {renderHeader('PIC', 'PIC')}
               {renderHeader('Progress', 'progress')}
-              {renderHeader('Created', 'createdAt')}
+              {renderHeader('Date', 'createdAt')}
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -343,7 +343,7 @@ export function TaskTable({
                 <p className="mt-1">{task.progress || "-"}</p>
               </div>
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Created</span>
+                <span className="text-muted-foreground">Created Date</span>
                 <span>
                   {formatDistanceToNow(task.createdAt, { addSuffix: true })}
                 </span>
