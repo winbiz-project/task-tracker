@@ -261,17 +261,20 @@ export function TaskTable({
         <Table>
           <TableHeader>
             <TableRow>
+              {renderHeader('Date', 'createdAt')}
               {renderHeader('Task Name', 'taskName')}
               {renderHeader('Status', 'status')}
               {renderHeader('PIC', 'PIC')}
               {renderHeader('Progress', 'progress')}
-              {renderHeader('Date', 'createdAt')}
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {filteredAndSortedTasks.map((task) => (
               <TableRow key={task.id}>
+                <TableCell>
+                  {format(task.createdAt, 'dd MMM yyyy')}
+                </TableCell>
                 <TableCell className="font-medium">
                   {renderEditableCell(task, 'taskName')}
                 </TableCell>
@@ -298,9 +301,6 @@ export function TaskTable({
                 <TableCell>{renderEditableCell(task, 'PIC')}</TableCell>
                 <TableCell>
                   {renderEditableCell(task, 'progress')}
-                </TableCell>
-                <TableCell>
-                  {format(task.createdAt, 'dd MMM yyyy')}
                 </TableCell>
                 <TableCell className="text-right">
                   <TaskActions
@@ -329,6 +329,12 @@ export function TaskTable({
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex justify-between">
+                <span className="text-muted-foreground">Created Date</span>
+                <span>
+                  {formatDistanceToNow(task.createdAt, { addSuffix: true })}
+                </span>
+              </div>
+              <div className="flex justify-between">
                 <span className="text-muted-foreground">Status</span>
                 <Badge variant={getStatusBadgeVariant(task.status)}>
                   {task.status}
@@ -341,12 +347,6 @@ export function TaskTable({
               <div>
                 <span className="text-muted-foreground">Progress</span>
                 <p className="mt-1">{task.progress || "-"}</p>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Created Date</span>
-                <span>
-                  {formatDistanceToNow(task.createdAt, { addSuffix: true })}
-                </span>
               </div>
             </CardContent>
             <CardFooter className="flex justify-end">
