@@ -65,7 +65,10 @@ export function TaskHistoryDialog({
                     )}
                   </div>
                   <div>
-                    <p className="font-medium">{entry.changeDescription}</p>
+                    <p>
+                        <span className="font-medium">{entry.changeField}</span>
+                        <span> {entry.changeDescription}</span>
+                    </p>
                     {entry.changeDetail && (
                       <pre className="mt-2 whitespace-pre-wrap font-sans text-sm text-muted-foreground border-l-2 pl-4">
                         {entry.changeDetail}

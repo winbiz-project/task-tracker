@@ -165,6 +165,7 @@ export default function Home() {
     await updateDoc(taskRef, updatedFields);
 
     let changeDescription = '';
+    let changeField = '';
     const fieldMapping: Record<string, string> = {
         taskName: "Task name",
         PIC: "PIC",
@@ -172,15 +173,16 @@ export default function Home() {
         progress: "Progress note"
     };
 
-    const changedField = Object.keys(updatedFields)[0] as keyof typeof updatedFields;
-    const oldValue = originalTask[changedField as keyof Task];
-    const newValue = updatedFields[changedField as keyof Omit<Task, "id" | "userId">];
+    const changedFieldKey = Object.keys(updatedFields)[0] as keyof typeof updatedFields;
+    const oldValue = originalTask[changedFieldKey as keyof Task];
+    const newValue = updatedFields[changedFieldKey as keyof Omit<Task, "id" | "userId">];
 
     if (oldValue !== newValue) {
-        if (changedField === 'progress') {
-            changeDescription = `Progress note updated to: "${newValue}"`;
-        } else if (changedField === 'status') {
-             changeDescription = `${fieldMapping[changedField]} changed from "${oldValue}" to "${newValue}".`;
+        changeField = fieldMapping[changedFieldKey];
+        if (changedFieldKey === 'progress') {
+            changeDescription = `updated to: "${newValue}"`;
+        } else if (changedFieldKey === 'status') {
+             changeDescription = `changed from "${oldValue}" to "${newValue}".`;
         } else {
             return;
         }
@@ -193,6 +195,7 @@ export default function Home() {
         changedAt: serverTimestamp(),
         PIC: user?.displayName || user?.email || "System", 
         changeDescription,
+        changeField,
     };
     
     await addDoc(collection(db, "taskHistories"), historyData);
@@ -222,7 +225,8 @@ export default function Home() {
                     taskId,
                     changedAt: serverTimestamp(),
                     PIC: user?.displayName || user?.email || "System",
-                    changeDescription: "Task details updated.",
+                    changeField: "Task details",
+                    changeDescription: "updated.",
                     changeDetail: changes.join('\n'),
                 });
             }
@@ -236,7 +240,8 @@ export default function Home() {
                 taskId: docRef.id,
                 changedAt: serverTimestamp(),
                 PIC: user?.displayName || user?.email || "System",
-                changeDescription: "Task created.",
+                changeField: "Task",
+                changeDescription: "created.",
             });
         }
         setIsFormOpen(false);
@@ -403,5 +408,3 @@ export default function Home() {
     </div>
   );
 }
-
-    

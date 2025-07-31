@@ -25,6 +25,7 @@ export interface TaskHistory {
   taskId: string;
   changedAt: Date | Timestamp;
   PIC: string;
+  changeField: string;
   changeDescription: string;
   changeDetail?: string;
 }
