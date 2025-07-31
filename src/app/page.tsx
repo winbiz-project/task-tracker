@@ -178,7 +178,7 @@ export default function Home() {
 
     if (oldValue !== newValue) {
         if (changedField === 'progress') {
-            changeDescription = 'Progress note updated.';
+            changeDescription = `Progress note updated to: "${newValue}"`;
         } else if (changedField === 'status') {
              changeDescription = `${fieldMapping[changedField]} changed from "${oldValue}" to "${newValue}".`;
         } else {
@@ -213,7 +213,7 @@ export default function Home() {
             if (originalTask.PIC !== updatedTask.PIC) changes.push(`PIC changed from "${originalTask.PIC}" to "${updatedTask.PIC}".`);
             if (originalTask.description !== updatedTask.description) changes.push(`Description updated.`);
             if (originalTask.status !== updatedTask.status) changes.push(`Status changed from "${originalTask.status}" to "${updatedTask.status}".`);
-            if (originalTask.progress !== updatedTask.progress) changes.push(`Progress note updated.`);
+            if (originalTask.progress !== updatedTask.progress) changes.push(`Progress note updated to: "${updatedTask.progress}"`);
             if ((originalTask.createdAt as Date).getTime() !== (updatedTask.createdAt as Date).getTime()) changes.push(`Date changed.`);
 
             if (changes.length > 0) {
@@ -403,3 +403,5 @@ export default function Home() {
     </div>
   );
 }
+
+    
