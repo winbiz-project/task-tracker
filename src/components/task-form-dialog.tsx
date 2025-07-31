@@ -20,6 +20,7 @@ import {
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -276,6 +277,9 @@ export function TaskFormDialog({ isOpen, onOpenChange, onSave, task, currentUser
                   <FormControl>
                     <Textarea placeholder="Add a short progress note..." {...field} />
                   </FormControl>
+                  <FormDescription>
+                    Your note will be recorded in the task's history.
+                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
